@@ -165,14 +165,6 @@ function AgentPreviewPanel({
             </span>
           </div>
         </div>
-        <Button
-          size="sm"
-          className="w-full gap-2"
-          onClick={onTestLive}
-        >
-          <Phone className="w-3.5 h-3.5" />
-          Test Agent Live
-        </Button>
       </div>
 
       {/* Chat area */}
@@ -252,6 +244,8 @@ function CreateAssistantPageContent() {
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   const [showTestDialog, setShowTestDialog] = useState(false);
+  const [showTestModeDialog, setShowTestModeDialog] = useState(false);
+  const [showChatPreviewDialog, setShowChatPreviewDialog] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const loadedTemplateIdRef = React.useRef<string | null>(null);
   const nameInputRef = React.useRef<HTMLInputElement>(null);
@@ -559,6 +553,7 @@ function CreateAssistantPageContent() {
       <TutorialOverlay />
       <TooltipProvider>
       <SidebarProvider
+        defaultOpen={false}
         style={
           {
             '--sidebar-width': 'calc(var(--spacing) * 72)',
@@ -638,6 +633,15 @@ function CreateAssistantPageContent() {
                 <Button
                   type="button"
                   variant="outline"
+                  className="h-9 px-5 text-sm gap-2"
+                  onClick={() => setShowTestModeDialog(true)}
+                >
+                  <Bot className="w-3.5 h-3.5" />
+                  Test Agent
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
                   className="h-9 px-5 text-sm"
                   onClick={handleSaveDraft}
                   disabled={isSubmitting}
@@ -657,7 +661,7 @@ function CreateAssistantPageContent() {
               </div>
             </header>
 
-            {/* ── Main 3-panel layout ── */}
+            {/* ── Main 2-panel layout ── */}
             <div className="flex flex-1 overflow-hidden">
 
               {/* ── Step sidebar ── */}
@@ -757,7 +761,7 @@ function CreateAssistantPageContent() {
                 >
                   <Form {...form}>
                     <form id="assistant-form" onSubmit={handleSubmit(onSubmit)}>
-                      <div className="p-8 max-w-2xl">
+                      <div className="p-8">
 
                         {/* Section heading */}
                         <div className="mb-8">
@@ -855,22 +859,60 @@ function CreateAssistantPageContent() {
                 </CreateAgentProvider>
               </main>
 
-              {/* ── Preview panel ── */}
-              <aside className="w-[300px] shrink-0 border-l flex flex-col bg-muted/10">
-                <AgentPreviewPanel
-                  initialMessage={watchedInitialMessage || DEMO_MESSAGES.initial}
-                  agentName={watchedName}
-                  onTestLive={() => setShowTestDialog(true)}
-                />
-              </aside>
-
             </div>
           </div>
         </SidebarInset>
       </SidebarProvider>
       </TooltipProvider>
 
-      {/* Test Agent Dialog */}
+      {/* Test Mode Picker Dialog */}
+      <Dialog open={showTestModeDialog} onOpenChange={setShowTestModeDialog}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Test Agent</DialogTitle>
+            <DialogDescription>Choose how you want to test your agent</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 py-2">
+            <button
+              onClick={() => { setShowTestModeDialog(false); setShowChatPreviewDialog(true); }}
+              className="flex flex-col items-center gap-3 rounded-xl border-2 border-border hover:border-primary hover:bg-primary/5 p-5 transition-colors text-left group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <MessageSquare className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Chatbot</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Text-based chat preview</p>
+              </div>
+            </button>
+            <button
+              onClick={() => { setShowTestModeDialog(false); setShowTestDialog(true); }}
+              className="flex flex-col items-center gap-3 rounded-xl border-2 border-border hover:border-primary hover:bg-primary/5 p-5 transition-colors text-left group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <Phone className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Voice Call</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Live voice agent test</p>
+              </div>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Chat Preview Dialog */}
+      <Dialog open={showChatPreviewDialog} onOpenChange={setShowChatPreviewDialog}>
+        <DialogContent className="sm:max-w-2xl p-0 overflow-hidden gap-0 h-[560px] flex flex-col">
+          <AgentPreviewPanel
+            initialMessage={watchedInitialMessage || DEMO_MESSAGES.initial}
+            agentName={watchedName}
+            onTestLive={() => { setShowChatPreviewDialog(false); setShowTestDialog(true); }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Voice Test Dialog */}
       <TestAssistantDialog
         open={showTestDialog}
         onOpenChange={setShowTestDialog}
