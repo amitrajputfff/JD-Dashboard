@@ -12,29 +12,22 @@ import { DEMO_MESSAGES } from '@/lib/constants/demo-messages';
 import { templatesApi, AgentTemplateResponse } from '@/lib/api/templates';
 import { templateToFormDefaults, fetchTemplateProviderIds } from '@/lib/utils/template-to-form';
 
-import { AppSidebar } from "@/components/app-sidebar"
-import { TutorialOverlay } from "@/components/tutorial"
-import { CreateAgentProvider } from "@/contexts/create-agent-context"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+import { AppSidebar } from '@/components/app-sidebar';
+import { TutorialOverlay } from '@/components/tutorial';
+import { CreateAgentProvider } from '@/contexts/create-agent-context';
+import { TestAssistantDialog } from '@/components/test-assistant-dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
-
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, User, Bot, Volume2, Mic, Settings } from 'lucide-react';
+} from '@/components/ui/sidebar';
 import {
   Dialog,
   DialogContent,
@@ -43,34 +36,228 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  ArrowLeft,
+  User,
+  Brain,
+  Volume2,
+  Mic,
+  Settings,
+  CheckCircle2,
+  Circle,
+  ChevronRight,
+  Bot,
+  Phone,
+  MessageSquare,
+  Sparkles,
+  Zap,
+} from 'lucide-react';
 
-// Form sections components
 import { BasicInfoSection } from './sections/basic-info-section';
 import LLMConfigSection from '@/components/agents/llm-config-section';
 import TTSConfigSection from '@/components/agents/tts-config-section';
 import STTConfigSection from '@/components/agents/stt-config-section';
 import AdvancedSettingsSection from './sections/advanced-settings-section';
 
+const STEPS = [
+  {
+    id: 'basic-info',
+    title: 'Basic Info',
+    description: 'Name, purpose & personality',
+    icon: User,
+    requiredFields: ['name', 'description'],
+  },
+  {
+    id: 'llm-config',
+    title: 'Brain',
+    description: 'Language model & prompts',
+    icon: Brain,
+    requiredFields: ['llm_provider_id', 'llm_model_id'],
+  },
+  {
+    id: 'tts-config',
+    title: 'Voice',
+    description: 'Text-to-speech & tone',
+    icon: Volume2,
+    requiredFields: ['tts_provider_id', 'voice_id'],
+  },
+  {
+    id: 'stt-config',
+    title: 'Listening',
+    description: 'Speech recognition',
+    icon: Mic,
+    requiredFields: ['stt_provider_id', 'stt_model_id'],
+  },
+  {
+    id: 'advanced-settings',
+    title: 'Advanced',
+    description: 'Functions & call settings',
+    icon: Settings,
+    requiredFields: [],
+  },
+] as const;
+
+type StepId = typeof STEPS[number]['id'];
+
+function AgentPreviewPanel({
+  initialMessage,
+  agentName,
+  onTestLive,
+}: {
+  initialMessage: string;
+  agentName: string;
+  onTestLive: () => void;
+}) {
+  const [messages, setMessages] = useState<{ role: 'agent' | 'user'; text: string }[]>([]);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const bottomRef = React.useRef<HTMLDivElement>(null);
+  const chatContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Update first message when initialMessage changes
+  useEffect(() => {
+    if (initialMessage) {
+      setMessages([{ role: 'agent', text: initialMessage }]);
+    }
+  }, [initialMessage]);
+
+  const sendMessage = () => {
+    if (!input.trim()) return;
+    const userMsg = input.trim();
+    setInput('');
+    setMessages((prev) => [...prev, { role: 'user', text: userMsg }]);
+    setIsTyping(true);
+    setTimeout(() => {
+      setIsTyping(false);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'agent',
+          text: "I'm a preview simulation — publish the agent to test live responses.",
+        },
+      ]);
+    }, 1200);
+  };
+
+  useEffect(() => {
+    const el = chatContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages, isTyping]);
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Preview header */}
+      <div className="p-5 border-b">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+            <Bot className="w-4 h-4 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold leading-none">
+              {agentName || 'Your Agent'}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">Preview mode</p>
+          </div>
+          <div className="ml-auto">
+            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live
+            </span>
+          </div>
+        </div>
+        <Button
+          size="sm"
+          className="w-full gap-2"
+          onClick={onTestLive}
+        >
+          <Phone className="w-3.5 h-3.5" />
+          Test Agent Live
+        </Button>
+      </div>
+
+      {/* Chat area */}
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-5 space-y-4 bg-muted/20">
+        {messages.map((msg, i) => (
+          <div
+            key={i}
+            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            {msg.role === 'agent' && (
+              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2 shrink-0 mt-0.5">
+                <Bot className="w-3 h-3 text-primary" />
+              </div>
+            )}
+            <div
+              className={`max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed ${
+                msg.role === 'user'
+                  ? 'bg-primary text-primary-foreground rounded-br-sm'
+                  : 'bg-background border rounded-bl-sm shadow-sm'
+              }`}
+            >
+              {msg.text}
+            </div>
+          </div>
+        ))}
+        {isTyping && (
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <Bot className="w-3 h-3 text-primary" />
+            </div>
+            <div className="bg-background border rounded-2xl rounded-bl-sm px-3 py-2 shadow-sm">
+              <div className="flex gap-1 items-center">
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:0ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:150ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:300ms]" />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Input area */}
+      <div className="p-4 border-t bg-background">
+        <div className="flex gap-2">
+          <Input
+            className="text-xs h-8"
+            placeholder="Simulate a user message..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+          />
+          <Button size="sm" className="h-8 px-3 shrink-0" onClick={sendMessage}>
+            <MessageSquare className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-2 text-center">
+          Simulation only · Publish to test live
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function CreateAssistantPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const aiConfigParam = searchParams.get('ai-config');
   const templateParam = searchParams.get('template');
+
   const [isDirty, setIsDirty] = useState(false);
-  const [activeTab, setActiveTab] = useState('basic-info');
-  const [aiGeneratedConfig] = useState(aiConfigParam ? JSON.parse(decodeURIComponent(aiConfigParam)) : null);
+  const [activeTab, setActiveTab] = useState<StepId>('basic-info');
+  const [aiGeneratedConfig] = useState(
+    aiConfigParam ? JSON.parse(decodeURIComponent(aiConfigParam)) : null,
+  );
   const [templateData, setTemplateData] = useState<AgentTemplateResponse | null>(null);
   const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
+  const [showTestDialog, setShowTestDialog] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
   const loadedTemplateIdRef = React.useRef<string | null>(null);
+  const nameInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Get default values from template, AI config, or use defaults
   const getDefaultValues = () => {
-    // Priority: template > AI config > defaults
-    if (templateData) {
-      return templateToFormDefaults(templateData);
-    }
+    if (templateData) return templateToFormDefaults(templateData);
     if (aiGeneratedConfig) {
       return {
         name: aiGeneratedConfig.name,
@@ -118,7 +305,6 @@ function CreateAssistantPageContent() {
         documents_ids: null,
       };
     }
-
     return {
       name: '',
       description: '',
@@ -160,677 +346,570 @@ function CreateAssistantPageContent() {
     };
   };
 
-  // Initialize form
   const form = useForm<any>({
     resolver: zodResolver(AssistantSchema),
     defaultValues: getDefaultValues(),
   });
 
-  // Get AI assistant creator hook
   const { createAssistant, isLoading: isSubmitting } = useCreateAssistant();
-
   const { handleSubmit, control, watch, setValue, reset, formState: { errors } } = form;
 
-  // Fetch template data if template parameter exists
-  useEffect(() => {
-    if (templateParam && templateParam !== loadedTemplateIdRef.current) {
-      setIsLoadingTemplate(true);
-      templatesApi.getTemplateById(templateParam)
-        .then((data) => {
-          setTemplateData(data);
-          loadedTemplateIdRef.current = templateParam;
-          toast.success(`Loaded template: ${data.name}`);
-        })
-        .catch((error) => {
-          console.error('Error loading template:', error);
-          toast.error('Failed to load template');
-        })
-        .finally(() => {
-          setIsLoadingTemplate(false);
-        });
-    }
-  }, [templateParam]);
-
-  // Reset form when template data is loaded
-  useEffect(() => {
-    if (templateData) {
-      const formDefaults = templateToFormDefaults(templateData);
-      reset(formDefaults);
-      
-      // Fetch and set provider IDs asynchronously
-      fetchTemplateProviderIds(templateData).then((providerIds) => {
-        if (providerIds.llm_provider_id) {
-          setValue('llm_provider_id', providerIds.llm_provider_id);
-        }
-        if (providerIds.tts_provider_id) {
-          setValue('tts_provider_id', providerIds.tts_provider_id);
-        }
-        if (providerIds.stt_provider_id) {
-          setValue('stt_provider_id', providerIds.stt_provider_id);
-        }
-      });
-    }
-  }, [templateData, reset, setValue]);
-
-  // Function to determine which sections have errors
-  const getSectionErrors = useCallback(() => {
-    const sectionErrors: Record<string, boolean> = {
-      'basic-info': false,
-      'llm-config': false,
-      'tts-config': false,
-      'stt-config': false,
-      'knowledge-base': false,
-      'advanced-settings': false,
-    };
-
-    if (!errors || Object.keys(errors).length === 0) {
-      return sectionErrors;
-    }
-
-    // Map form fields to their respective sections
-    const fieldToSection: Record<string, string> = {
-      // Basic Info fields
-      'name': 'basic-info',
-      'description': 'basic-info',
-      'category': 'basic-info',
-      'tags': 'basic-info',
-      
-      // LLM Config fields
-      'llm_provider_id': 'llm-config',
-      'llm_model_id': 'llm-config',
-      'prompt': 'llm-config',
-      'temperature': 'llm-config',
-      'max_token': 'llm-config',
-      
-      // TTS Config fields
-      'tts_provider_id': 'tts-config',
-      'tts_model_id': 'tts-config',
-      'voice_id': 'tts-config',
-      'speech_speed': 'tts-config',
-      'pitch': 'tts-config',
-      
-      // STT Config fields
-      'stt_provider_id': 'stt-config',
-      'stt_model_id': 'stt-config',
-      'language_id': 'stt-config',
-      
-      // Knowledge Base fields
-      'has_knowledge_base': 'knowledge-base',
-      'documents_ids': 'knowledge-base',
-      
-      // Advanced Settings fields
-      'call_recording': 'advanced-settings',
-      'voice_activity_detection': 'advanced-settings',
-      'barge_in': 'advanced-settings',
-      'noise_suppression': 'advanced-settings',
-      'function_calling': 'advanced-settings',
-      'functions': 'advanced-settings',
-      'max_call_duration': 'advanced-settings',
-      'silence_timeout': 'advanced-settings',
-    };
-
-    // Check which sections have errors
-    Object.keys(errors).forEach(field => {
-      const section = fieldToSection[field];
-      if (section) {
-        sectionErrors[section] = true;
-      }
-    });
-
-    return sectionErrors;
-  }, [errors]);
-
-  // Watch for provider IDs to pass to context
+  const watchedName = watch('name');
+  const watchedInitialMessage = watch('initial_message');
   const watchedLLMProviderId = watch('llm_provider_id');
   const watchedTTSProviderId = watch('tts_provider_id');
   const watchedTTSModelId = watch('tts_model_id');
   const watchedSTTProviderId = watch('stt_provider_id');
 
-  // Reset form when AI config changes
+  // Step completion based on filled required fields
+  const getStepCompletion = useCallback(() => {
+    const values = form.getValues();
+    return STEPS.map((step) => ({
+      id: step.id,
+      completed:
+        step.requiredFields.length === 0 ||
+        step.requiredFields.every((f) => {
+          const v = values[f];
+          return v !== undefined && v !== null && v !== '';
+        }),
+    }));
+  }, [form]);
+
+  const completedCount = getStepCompletion().filter((s) => s.completed).length;
+  const progressPercent = (completedCount / STEPS.length) * 100;
+
+  useEffect(() => {
+    if (templateParam && templateParam !== loadedTemplateIdRef.current) {
+      setIsLoadingTemplate(true);
+      templatesApi
+        .getTemplateById(templateParam)
+        .then((data) => {
+          setTemplateData(data);
+          loadedTemplateIdRef.current = templateParam;
+          toast.success(`Loaded template: ${data.name}`);
+        })
+        .catch(() => toast.error('Failed to load template'))
+        .finally(() => setIsLoadingTemplate(false));
+    }
+  }, [templateParam]);
+
+  useEffect(() => {
+    if (templateData) {
+      const formDefaults = templateToFormDefaults(templateData);
+      reset(formDefaults);
+      fetchTemplateProviderIds(templateData).then((providerIds) => {
+        if (providerIds.llm_provider_id) setValue('llm_provider_id', providerIds.llm_provider_id);
+        if (providerIds.tts_provider_id) setValue('tts_provider_id', providerIds.tts_provider_id);
+        if (providerIds.stt_provider_id) setValue('stt_provider_id', providerIds.stt_provider_id);
+      });
+    }
+  }, [templateData, reset, setValue]);
+
   useEffect(() => {
     if (aiGeneratedConfig) {
-      const defaultValues = getDefaultValues();
-      reset(defaultValues);
-      toast.success(`AI-generated configuration loaded successfully!`, {
-        description: `Your agent has been configured based on your business requirements.`
-      });
+      reset(getDefaultValues());
+      toast.success('AI-generated configuration loaded!');
     }
   }, [aiGeneratedConfig, reset]);
 
-  // Watch for form changes to show dirty state warning
-  React.useEffect(() => {
-    const subscription = watch(() => {
-      setIsDirty(true);
-    });
+  useEffect(() => {
+    const subscription = watch(() => setIsDirty(true));
     return () => subscription.unsubscribe();
   }, [watch]);
 
-  // Validation function for required fields (only when not saving as draft)
+  useEffect(() => {
+    if (isEditingName) nameInputRef.current?.focus();
+  }, [isEditingName]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) { e.preventDefault(); e.returnValue = ''; }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
   const validateRequiredFields = (data: any) => {
-    const missingFields = [];
-    
-    if (!data.llm_model_id) missingFields.push('LLM Model');
-    if (!data.language_id) missingFields.push('Language');
-    if (!data.stt_model_id) missingFields.push('STT Model');
-    if (!data.tts_model_id) missingFields.push('TTS Model');
-    if (!data.voice_id) missingFields.push('Voice');
-    
-    return missingFields;
+    const missing = [];
+    if (!data.llm_model_id) missing.push('LLM Model');
+    if (!data.language_id) missing.push('Language');
+    if (!data.stt_model_id) missing.push('STT Model');
+    if (!data.tts_model_id) missing.push('TTS Model');
+    if (!data.voice_id) missing.push('Voice');
+    return missing;
   };
 
-  // Handle form submission
   const onSubmit = async (data: any) => {
     try {
-      // Validate required fields for active assistants
-      const missingFields = validateRequiredFields(data);
-      if (missingFields.length > 0) {
+      const missing = validateRequiredFields(data);
+      if (missing.length > 0) {
         toast.error('Missing Required Fields', {
-          description: `Please configure: ${missingFields.join(', ')}. Or save as draft to continue later.`,
+          description: `Please configure: ${missing.join(', ')}`,
         });
         return;
       }
-
-      // Process multiple functions data
       let functionsData: any[] | null = null;
-      
-      if (data.function_calling && data.functions && Array.isArray(data.functions) && data.functions.length > 0) {
-        const validFunctions = data.functions.filter((func: any) => {
-          // Only include functions that have at least a name or URL
-          return func && (func.name || func.url);
-        });
-        
-        if (validFunctions.length > 0) {
-          functionsData = validFunctions.map((func: any) => ({
-            name: func.name || '',
-            description: func.description || '',
-            url: func.url || '',
-            method: func.method || 'POST',
-            headers: func.headers || {},
-            query_params: func.query_params || {},
-            body_format: func.body_format || 'json',
-            custom_body: func.custom_body || '',
-            schema: func.schema || {}
+      if (data.function_calling && data.functions?.length > 0) {
+        const valid = data.functions.filter((f: any) => f?.name || f?.url);
+        if (valid.length > 0) {
+          functionsData = valid.map((f: any) => ({
+            name: f.name || '',
+            description: f.description || '',
+            url: f.url || '',
+            method: f.method || 'POST',
+            headers: f.headers || {},
+            query_params: f.query_params || {},
+            body_format: f.body_format || 'json',
+            custom_body: f.custom_body || '',
+            schema: f.schema || {},
           }));
         }
       }
-      
-      // Clean up old function fields and set new data
-      const { 
-        function_url, 
-        http_method, 
-        headers, 
-        query_params, 
-        body_format, 
-        custom_body, 
-        ...cleanData 
-      } = data;
-      
-      // Set status to Active when publishing and handle transfer number logic
+      const { function_url, http_method, headers, query_params, body_format, custom_body, ...cleanData } = data;
       const assistantData = {
         ...cleanData,
         functions: functionsData,
         status: 'Active',
-        // Always send transfer_number as null if not set
         transfer_number: cleanData.transfer_number || null,
-        // Ensure NULL values for missing IDs
         llm_model_id: cleanData.llm_model_id || null,
         stt_model_id: cleanData.stt_model_id || null,
         tts_model_id: cleanData.tts_model_id || null,
-        voice_id: cleanData.voice_id || null
+        voice_id: cleanData.voice_id || null,
       };
-      
       const result = await createAssistant(assistantData);
-      
       if (result.success) {
         toast.success('Agent created successfully!');
         setIsDirty(false);
         router.push('/agents');
       } else {
-        toast.error(result.error || 'Failed to Create Agent', {
-          description: 'Please check your inputs and try again.'
-        });
+        toast.error(result.error || 'Failed to Create Agent');
       }
-    } catch (error) {
-      toast.error('An unexpected error occurred while creating agent', {
-        description: 'Please try again or contact support if the issue persists.'
-      });
+    } catch {
+      toast.error('An unexpected error occurred');
     }
   };
 
   const handleSaveDraft = async () => {
     try {
-      // Validate at least the required fields (name and description)
       const formData = form.getValues();
-      
-      // Check required fields
-      if (!formData.name || formData.name.trim().length < 2) {
+      if (!formData.name?.trim() || formData.name.trim().length < 2) {
         toast.error('Name is required (minimum 2 characters)');
         return;
       }
-      
-      if (!formData.description || formData.description.trim().length < 1) {
+      if (!formData.description?.trim()) {
         toast.error('Description is required');
         return;
       }
-      
-      // Combine function configuration into a single object (same as onSubmit)
-      let functionsData: any[] = [];
-      
-      if (formData.function_calling && formData.functions && formData.functions[0]) {
-        try {
-          // Parse the function schema
-          const functionSchema = JSON.parse(formData.functions[0]);
-          
-          // Create the complete function configuration object
-          const functionConfig = {
-            url: formData.function_url || '',
-            method: formData.http_method || 'POST',
-            headers: formData.headers || {},
-            query_params: formData.query_params || {},
-            body_format: formData.body_format || 'json',
-            custom_body: formData.custom_body || '',
-            schema: functionSchema
-          };
-          
-          functionsData = [functionConfig];
-        } catch (error) {
-          console.warn('Invalid function schema JSON:', error);
-          // If JSON is invalid, still include the configuration without schema
-          const functionConfig = {
-            url: formData.function_url || '',
-            method: formData.http_method || 'POST',
-            headers: formData.headers || {},
-            query_params: formData.query_params || {},
-            body_format: formData.body_format || 'json',
-            custom_body: formData.custom_body || '',
-            schema: {}
-          };
-          
-          functionsData = [functionConfig];
-        }
-      }
-      
-      // Set status to draft when saving as draft and handle transfer number logic
-      const assistantData = {
-        ...formData,
-        functions: functionsData,
-        status: 'Draft',
-        // Always send transfer_number as null if not set
-        transfer_number: formData.transfer_number || null
-      };
-      
-      const result = await createAssistant(assistantData);
-      
+      const result = await createAssistant({ ...formData, status: 'Draft', transfer_number: formData.transfer_number || null });
       if (result.success) {
-        toast.success('Agent saved as draft successfully!');
+        toast.success('Agent saved as draft!');
         setIsDirty(false);
         router.push('/agents');
       } else {
         toast.error(result.error || 'Failed to save draft');
       }
-    } catch (error) {
-      toast.error('An unexpected error occurred while saving draft');
+    } catch {
+      toast.error('An unexpected error occurred');
     }
   };
 
-  // Handle navigation with unsaved changes check
-  const handleNavigationWithCheck = useCallback((navigationFn: () => void) => {
-    if (isDirty) {
-      setPendingNavigation(() => navigationFn);
-      setShowUnsavedChangesDialog(true);
-    } else {
-      navigationFn();
-    }
-  }, [isDirty]);
+  const handleNavigationWithCheck = useCallback(
+    (fn: () => void) => {
+      if (isDirty) { setPendingNavigation(() => fn); setShowUnsavedChangesDialog(true); }
+      else fn();
+    },
+    [isDirty],
+  );
 
-  // Handle saving changes from unsaved changes dialog
   const handleSaveChanges = useCallback(async () => {
-    try {
-      await handleSaveDraft();
-      setShowUnsavedChangesDialog(false);
-      if (pendingNavigation) {
-        pendingNavigation();
-        setPendingNavigation(null);
-      }
-    } catch (error) {
-      console.error('Failed to save changes:', error);
-    }
+    await handleSaveDraft();
+    setShowUnsavedChangesDialog(false);
+    if (pendingNavigation) { pendingNavigation(); setPendingNavigation(null); }
   }, [pendingNavigation]);
 
-  // Handle discarding changes from unsaved changes dialog
   const handleDiscardChanges = useCallback(() => {
     setIsDirty(false);
     setShowUnsavedChangesDialog(false);
-    if (pendingNavigation) {
-      pendingNavigation();
-      setPendingNavigation(null);
-    }
+    if (pendingNavigation) { pendingNavigation(); setPendingNavigation(null); }
   }, [pendingNavigation]);
 
-  // Handle navigation warning
-  React.useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isDirty) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
+  const activeStep = STEPS.find((s) => s.id === activeTab)!;
+  const stepCompletion = getStepCompletion();
+  const hasSectionError = (stepId: string) => {
+    const fieldMap: Record<string, string[]> = {
+      'basic-info': ['name', 'description'],
+      'llm-config': ['llm_provider_id', 'llm_model_id', 'prompt', 'temperature'],
+      'tts-config': ['tts_provider_id', 'tts_model_id', 'voice_id'],
+      'stt-config': ['stt_provider_id', 'stt_model_id', 'language_id'],
+      'advanced-settings': ['functions', 'max_call_duration'],
     };
+    return (fieldMap[stepId] || []).some((f) => !!errors[f]);
+  };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty]);
+  // Mock assistant for the test dialog (live preview requires a real agent ID)
+  const previewAssistant = {
+    id: 'preview-draft',
+    name: watchedName || 'Draft Agent',
+    description: 'Preview mode – this agent has not been published yet.',
+    status: 'active' as const,
+  };
 
   return (
     <>
       <TutorialOverlay />
-      <SidebarProvider>
+      <TooltipProvider>
+      <SidebarProvider
+        style={
+          {
+            '--sidebar-width': 'calc(var(--spacing) * 72)',
+            '--header-height': 'calc(var(--spacing) * 12)',
+          } as React.CSSProperties
+        }
+      >
         <AppSidebar />
         <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-8">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 data-[orientation=vertical]:h-4"
-              />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="/dashboard">
-                      JustDial
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbLink href="/agents">
-                      AI Agents
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Create Agent</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-            {isDirty && (
-              <div className="ml-auto mr-8">
-                <Badge variant="outline" className="text-amber-600 border-amber-200">
-                  Unsaved changes
-                </Badge>
-              </div>
-            )}
-          </header>
+          <div className="flex flex-col h-full">
 
-          <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleNavigationWithCheck(() => router.back())}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-xl font-semibold tracking-tight">
-                      {templateData 
-                        ? `Create Agent from Template`
-                        : aiGeneratedConfig 
-                        ? 'Create AI-Generated Agent' 
-                        : 'Create Agent'
-                      }
-                    </h1>
-                    {isLoadingTemplate && (
-                      <Badge variant="outline" className="text-blue-600 border-blue-200">
-                        Loading template...
-                      </Badge>
-                    )}
-                    {templateData && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-sm">
-                          📋
-                        </div>
-                        <span className="text-sm font-medium">{templateData.name}</span>
-                      </div>
-                    )}
-                    {aiGeneratedConfig && !templateData && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-sm">
-                          🤖
-                        </div>
-                        <span className="text-sm font-medium">AI Generated</span>
-                      </div>
-                    )}
+            {/* ── Top bar ── */}
+            <header className="flex min-h-[56px] shrink-0 items-center border-b bg-background px-6 py-3 transition-[width,height] ease-linear">
+              {/* Left cluster */}
+              <div className="flex items-center gap-3 min-w-0">
+                <SidebarTrigger />
+                <Separator orientation="vertical" className="h-5 data-[orientation=vertical]:h-5" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => handleNavigationWithCheck(() => router.back())}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <Separator orientation="vertical" className="h-5 data-[orientation=vertical]:h-5" />
 
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {templateData
-                      ? `Using template: ${templateData.description}`
-                      : aiGeneratedConfig 
-                      ? 'Configuration automatically generated based on your business requirements'
-                      : 'Configure your AI agent with advanced settings and integrations'
-                    }
-                  </p>
-                </div>
+                {/* Editable agent name */}
+                {isEditingName ? (
+                  <input
+                    ref={nameInputRef}
+                    className="text-sm font-semibold bg-transparent border-b-2 border-primary outline-none py-0.5 min-w-[180px] max-w-[300px]"
+                    value={watchedName || ''}
+                    onChange={(e) => setValue('name', e.target.value)}
+                    onBlur={() => setIsEditingName(false)}
+                    onKeyDown={(e) => e.key === 'Enter' && setIsEditingName(false)}
+                    placeholder="Untitled Agent"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingName(true)}
+                    className="flex items-center gap-2 group rounded px-1 py-0.5 hover:bg-accent transition-colors max-w-[300px]"
+                  >
+                    <span className="text-sm font-semibold truncate">
+                      {watchedName || 'Untitled Agent'}
+                    </span>
+                    <span className="text-muted-foreground opacity-0 group-hover:opacity-60 transition-opacity text-xs shrink-0">✏</span>
+                  </button>
+                )}
+
+                {/* Status badges — tightly coupled to agent name */}
+                {isDirty && (
+                  <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-[11px] px-2 shrink-0">
+                    Unsaved
+                  </Badge>
+                )}
+                {isLoadingTemplate && (
+                  <Badge variant="outline" className="text-blue-600 border-blue-200 text-[11px] px-2 shrink-0">
+                    Loading template...
+                  </Badge>
+                )}
+                {templateData && (
+                  <Badge variant="outline" className="text-green-700 border-green-200 bg-green-50 gap-1 text-[11px] px-2 shrink-0">
+                    📋 {templateData.name}
+                  </Badge>
+                )}
+                {aiGeneratedConfig && !templateData && (
+                  <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50 gap-1 text-[11px] px-2 shrink-0">
+                    <Sparkles className="w-3 h-3" /> AI Generated
+                  </Badge>
+                )}
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center space-x-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
+              {/* Right cluster — action buttons */}
+              <div className="ml-auto flex items-center gap-3 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-9 px-5 text-sm"
                   onClick={handleSaveDraft}
                   disabled={isSubmitting}
                 >
                   Save Draft
                 </Button>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   form="assistant-form"
                   disabled={isSubmitting}
-                  className="min-w-32"
+                  className="h-9 px-5 text-sm gap-2"
                   data-tutorial="create-button"
                 >
-                  {isSubmitting ? 'Creating...' : 'Publish Agent'}
+                  <Zap className="w-3.5 h-3.5" />
+                  {isSubmitting ? 'Publishing...' : 'Publish Agent'}
                 </Button>
               </div>
-            </div>
+            </header>
 
-            <CreateAgentProvider
-              llmProviderId={watchedLLMProviderId}
-              ttsProviderId={watchedTTSProviderId}
-              ttsModelId={watchedTTSModelId}
-              sttProviderId={watchedSTTProviderId}
-            >
-              <Form {...form}>
-                <form id="assistant-form" onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                
-                {/* Simple Tab Navigation */}
-                <div className="w-full text-sm">
-                  {/* Tab Headers */}
-                  <div className="flex flex-row items-center gap-3 justify-start relative overflow-auto sm:overflow-visible no-visible-scrollbar max-w-full w-full mb-6">
-                  {[
-                    { title: "Basic Info", value: "basic-info", icon: User, tutorial: "basic-info-tab" },
-                    { title: "LLM Config", value: "llm-config", icon: Bot, tutorial: "llm-tab" },
-                    { title: "Text-to-Speech", value: "tts-config", icon: Volume2, tutorial: "tts-tab" },
-                    { title: "Speech-to-Text", value: "stt-config", icon: Mic, tutorial: "stt-tab" },
-                    { title: "Advanced", value: "advanced-settings", icon: Settings, tutorial: "advanced-tab" },
-                  ].map((tab: any) => {
-                      const sectionErrors = getSectionErrors();
-                      const hasError = sectionErrors[tab.value] || false;
-                      
-                      return (
-                        <button
-                          key={tab.value}
-                          type="button"
-                          onClick={() => setActiveTab(tab.value)}
-                          data-tutorial={tab.tutorial}
-                          className={`relative px-4 py-2 rounded-full transition-colors flex items-center gap-2 ${
-                            activeTab === tab.value
-                              ? 'bg-zinc-900 text-white'
-                              : hasError
-                                ? 'bg-red-100 text-red-700 hover:bg-red-200 border border-red-200'
-                                : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
-                          }`}
-                        >
-                          <tab.icon className="h-4 w-4" />
-                          {tab.title}
-                          {hasError && (
-                            <div className="h-2 w-2 rounded-full bg-red-500 ml-1" />
+            {/* ── Main 3-panel layout ── */}
+            <div className="flex flex-1 overflow-hidden">
+
+              {/* ── Step sidebar ── */}
+              <nav className="w-[232px] shrink-0 border-r flex flex-col pt-5 pb-6 px-4 bg-muted/20">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70 px-3 mb-4">
+                  Configuration
+                </p>
+
+                <div className="flex flex-col gap-1">
+                  {STEPS.map((step, index) => {
+                    const completion = stepCompletion.find((s) => s.id === step.id);
+                    const isActive = activeTab === step.id;
+                    const isCompleted = completion?.completed ?? false;
+                    const hasError = hasSectionError(step.id);
+                    const Icon = step.icon;
+
+                    return (
+                      <button
+                        key={step.id}
+                        type="button"
+                        onClick={() => setActiveTab(step.id)}
+                        className={[
+                          'flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all duration-150',
+                          isActive
+                            ? 'bg-primary text-primary-foreground shadow-md'
+                            : hasError
+                            ? 'hover:bg-red-50 text-red-700'
+                            : 'hover:bg-accent/70 text-foreground',
+                        ].join(' ')}
+                      >
+                        {/* Step icon container */}
+                        <div className={[
+                          'flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors',
+                          isActive
+                            ? 'bg-white/20'
+                            : isCompleted
+                            ? 'bg-primary/10'
+                            : 'bg-background border border-border/60',
+                        ].join(' ')}>
+                          {isCompleted && !isActive ? (
+                            <CheckCircle2 className="w-4 h-4 text-primary" />
+                          ) : hasError ? (
+                            <Circle className="w-4 h-4 text-red-500 fill-red-100" />
+                          ) : (
+                            <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-muted-foreground'}`} />
                           )}
-                        </button>
-                      );
-                    })}
-                  </div>
+                        </div>
 
-                  {/* Tab Content */}
-                  <div className="w-full">
-                    {activeTab === 'basic-info' && (
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Basic Information</CardTitle>
-                          <CardDescription>
-                            Essential details about your agent
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6" data-tutorial="basic-info-section">
-                          <BasicInfoSection 
-                            control={control} 
-                            watch={watch} 
-                            setValue={setValue} 
-                            errors={errors}
-                          />
-                        </CardContent>
-                      </Card>
-                    )}
+                        {/* Labels */}
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs font-semibold leading-snug ${isActive ? 'text-white' : ''}`}>
+                            {step.title}
+                          </p>
+                          <p className={`text-[10px] leading-snug truncate mt-0.5 ${isActive ? 'text-white/65' : 'text-muted-foreground'}`}>
+                            {step.description}
+                          </p>
+                        </div>
 
-                    {activeTab === 'llm-config' && (
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>LLM Configuration</CardTitle>
-                          <CardDescription>
-                            Language model settings and behavior
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                          <LLMConfigSection 
-                            control={control} 
-                            watch={watch} 
-                            setValue={setValue} 
-                            mode="create"
-                            showHeader={false}
-                            errors={errors}
-                          />
-                        </CardContent>
-                      </Card>
-                    )}
-
-                    {activeTab === 'tts-config' && (
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Text-to-Speech</CardTitle>
-                          <CardDescription>
-                            Voice synthesis and speech settings
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                          <TTSConfigSection 
-                            control={control} 
-                            watch={watch} 
-                            setValue={setValue} 
-                            mode="create"
-                            showHeader={false}
-                            errors={errors}
-                          />
-                        </CardContent>
-                      </Card>
-                    )}
-
-                    {activeTab === 'stt-config' && (
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Speech-to-Text</CardTitle>
-                          <CardDescription>
-                            Speech recognition and language settings
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                          <STTConfigSection 
-                            control={control} 
-                            watch={watch} 
-                            setValue={setValue} 
-                            mode="create"
-                            showHeader={false}
-                            errors={errors}
-                          />
-                        </CardContent>
-                      </Card>
-                    )}
-
-                    {activeTab === 'advanced-settings' && (
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Advanced Settings</CardTitle>
-                          <CardDescription>
-                            Function calling and call transfer settings
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                          <AdvancedSettingsSection 
-                            control={control} 
-                            watch={watch} 
-                            setValue={setValue} 
-                            errors={errors}
-                          />
-                        </CardContent>
-                      </Card>
-                    )}
-                  </div>
+                        {/* Right indicator */}
+                        {isActive ? (
+                          <ChevronRight className="w-3.5 h-3.5 text-white/60 shrink-0" />
+                        ) : (
+                          <span className={[
+                            'shrink-0 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center',
+                            isCompleted ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground/60',
+                          ].join(' ')}>
+                            {index + 1}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
 
+                {/* Progress footer */}
+                <div className="mt-auto pt-5 border-t border-border/50 mx-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] text-muted-foreground font-medium">Completion</span>
+                    <span className="text-[11px] font-bold text-primary">{completedCount}/{STEPS.length}</span>
+                  </div>
+                  <Progress value={progressPercent} className="h-1.5" />
+                  <p className="text-[10px] text-muted-foreground/70 mt-2">
+                    {completedCount === STEPS.length
+                      ? '✓ Ready to publish'
+                      : `${STEPS.length - completedCount} section${STEPS.length - completedCount !== 1 ? 's' : ''} remaining`}
+                  </p>
+                </div>
+              </nav>
 
-                </form>
-              </Form>
-            </CreateAgentProvider>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+              {/* ── Config panel ── */}
+              <main className="flex-1 overflow-y-auto">
+                <CreateAgentProvider
+                  llmProviderId={watchedLLMProviderId}
+                  ttsProviderId={watchedTTSProviderId}
+                  ttsModelId={watchedTTSModelId}
+                  sttProviderId={watchedSTTProviderId}
+                >
+                  <Form {...form}>
+                    <form id="assistant-form" onSubmit={handleSubmit(onSubmit)}>
+                      <div className="p-8 max-w-2xl">
 
-    {/* Unsaved Changes Confirmation Dialog */}
-    <Dialog open={showUnsavedChangesDialog} onOpenChange={setShowUnsavedChangesDialog}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Unsaved Changes</DialogTitle>
-          <DialogDescription>
-            You have unsaved changes that will be lost if you continue. What would you like to do?
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => setShowUnsavedChangesDialog(false)}>
-            Cancel
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={handleDiscardChanges}
-            className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
-          >
-            Discard Changes
-          </Button>
-          <Button onClick={handleSaveChanges} disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : 'Save Draft'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+                        {/* Section heading */}
+                        <div className="mb-8">
+                          <div className="flex items-center gap-2.5 mb-2">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                              {React.createElement(activeStep.icon, { className: 'w-4 h-4 text-primary' })}
+                            </div>
+                            <h2 className="text-xl font-semibold">{activeStep.title}</h2>
+                          </div>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{activeStep.description}</p>
+                        </div>
+
+                        {activeTab === 'basic-info' && (
+                          <BasicInfoSection
+                            control={control}
+                            watch={watch}
+                            setValue={setValue}
+                            errors={errors}
+                          />
+                        )}
+                        {activeTab === 'llm-config' && (
+                          <LLMConfigSection
+                            control={control}
+                            watch={watch}
+                            setValue={setValue}
+                            mode="create"
+                            showHeader={false}
+                            errors={errors}
+                          />
+                        )}
+                        {activeTab === 'tts-config' && (
+                          <TTSConfigSection
+                            control={control}
+                            watch={watch}
+                            setValue={setValue}
+                            mode="create"
+                            showHeader={false}
+                            errors={errors}
+                          />
+                        )}
+                        {activeTab === 'stt-config' && (
+                          <STTConfigSection
+                            control={control}
+                            watch={watch}
+                            setValue={setValue}
+                            mode="create"
+                            showHeader={false}
+                            errors={errors}
+                          />
+                        )}
+                        {activeTab === 'advanced-settings' && (
+                          <AdvancedSettingsSection
+                            control={control}
+                            watch={watch}
+                            setValue={setValue}
+                            errors={errors}
+                          />
+                        )}
+
+                        {/* Step navigation footer */}
+                        <div className="flex items-center justify-between pt-8 mt-8 border-t">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={STEPS.findIndex((s) => s.id === activeTab) === 0}
+                            onClick={() => {
+                              const i = STEPS.findIndex((s) => s.id === activeTab);
+                              if (i > 0) setActiveTab(STEPS[i - 1].id);
+                            }}
+                          >
+                            ← Previous
+                          </Button>
+                          {STEPS.findIndex((s) => s.id === activeTab) < STEPS.length - 1 ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => {
+                                const i = STEPS.findIndex((s) => s.id === activeTab);
+                                if (i < STEPS.length - 1) setActiveTab(STEPS[i + 1].id);
+                              }}
+                            >
+                              Next →
+                            </Button>
+                          ) : (
+                            <Button type="submit" form="assistant-form" size="sm" disabled={isSubmitting} className="gap-1.5">
+                              <Zap className="w-3.5 h-3.5" />
+                              {isSubmitting ? 'Publishing...' : 'Publish Agent'}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </form>
+                  </Form>
+                </CreateAgentProvider>
+              </main>
+
+              {/* ── Preview panel ── */}
+              <aside className="w-[300px] shrink-0 border-l flex flex-col bg-muted/10">
+                <AgentPreviewPanel
+                  initialMessage={watchedInitialMessage || DEMO_MESSAGES.initial}
+                  agentName={watchedName}
+                  onTestLive={() => setShowTestDialog(true)}
+                />
+              </aside>
+
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+      </TooltipProvider>
+
+      {/* Test Agent Dialog */}
+      <TestAssistantDialog
+        open={showTestDialog}
+        onOpenChange={setShowTestDialog}
+        assistant={previewAssistant}
+      />
+
+      {/* Unsaved Changes Dialog */}
+      <Dialog open={showUnsavedChangesDialog} onOpenChange={setShowUnsavedChangesDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unsaved Changes</DialogTitle>
+            <DialogDescription>
+              You have unsaved changes that will be lost if you continue.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowUnsavedChangesDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleDiscardChanges}
+              className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+            >
+              Discard Changes
+            </Button>
+            <Button onClick={handleSaveChanges} disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : 'Save Draft'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
 
 export default function CreateAssistantPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center h-screen text-sm text-muted-foreground">Loading...</div>}>
       <CreateAssistantPageContent />
     </Suspense>
   );

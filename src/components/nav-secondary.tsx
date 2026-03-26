@@ -1,5 +1,7 @@
+"use client"
+
 import * as React from "react"
-import { type LucideIcon } from "lucide-react"
+import Link from "next/link"
 
 import {
   SidebarGroup,
@@ -16,7 +18,7 @@ export function NavSecondary({
   items: {
     title: string
     url: string
-    icon: LucideIcon
+    icon: React.ReactNode
   }[]
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
   return (
@@ -25,11 +27,11 @@ export function NavSecondary({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild size="sm" className="text-xs">
-                <a href={item.url}>
-                  <item.icon className="h-3 w-3" />
+              <SidebarMenuButton asChild>
+                <Link href={item.url}>
+                  {item.icon}
                   <span>{item.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}

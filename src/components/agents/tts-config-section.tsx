@@ -595,8 +595,8 @@ export default function TTSConfigSection({
         </div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
+      <div className="grid grid-cols-1 gap-5">
+
         {/* TTS Provider */}
         <FormField
           control={control}
@@ -628,7 +628,7 @@ export default function TTSConfigSection({
                     </SelectValue>
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
                   {providersLoading ? (
                     <SelectItem value="loading" disabled>
                       <InlineLoader size="sm" className="mr-2" />
@@ -712,7 +712,7 @@ export default function TTSConfigSection({
                     </SelectValue>
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
                   {!watchedTTSProviderId ? (
                     <SelectItem value="no-provider" disabled>
                       Please select a provider first
@@ -1045,8 +1045,8 @@ export default function TTSConfigSection({
           <h4 className="text-sm font-medium text-zinc-900">Speech Synthesis Features</h4>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          
+        <div className="grid grid-cols-1 gap-4">
+
           {/* Call Recording */}
           <FormField
             control={control}

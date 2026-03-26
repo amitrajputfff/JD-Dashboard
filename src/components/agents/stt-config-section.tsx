@@ -346,7 +346,7 @@ export default function STTConfigSection({
                   </SelectValue>
                 </SelectTrigger>
               </FormControl>
-              <SelectContent>
+              <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
                 {providersLoading ? (
                   <SelectItem value="loading" disabled>
                     <InlineLoader size="sm" className="mr-2" />
@@ -383,8 +383,8 @@ export default function STTConfigSection({
         )}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
+      <div className="grid grid-cols-1 gap-5">
+
         {/* STT Model */}
         <FormField
           control={control}
@@ -432,7 +432,7 @@ export default function STTConfigSection({
                     </SelectValue>
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
                   {!watchedSTTProviderId ? (
                     <SelectItem value="no-provider" disabled>
                       Please select a provider first
@@ -505,7 +505,7 @@ export default function STTConfigSection({
                       </SelectValue>
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
                     {languagesLoadingState ? (
                       <SelectItem value="loading" disabled>
                         <InlineLoader size="sm" className="mr-2" />
@@ -613,7 +613,7 @@ export default function STTConfigSection({
             control={control}
             name="noise_suppression"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 md:col-span-2">
                 <div className="space-y-0.5">
                   <FormLabel className="text-sm font-medium">Noise Suppression</FormLabel>
                   <FormDescription>

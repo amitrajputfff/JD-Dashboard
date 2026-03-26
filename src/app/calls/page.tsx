@@ -361,7 +361,7 @@ export default function CallsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <ExportDataDialog defaultExportType="call_logs">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="default">
                     Export Data
                   </Button>
                 </ExportDataDialog>

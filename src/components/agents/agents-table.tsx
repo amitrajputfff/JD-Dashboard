@@ -170,7 +170,7 @@ export function AgentsTable({
                       <Eye className="mr-2 h-4 w-4" />
                       View Details
                     </DropdownMenuItem>
-                    {agent.status === 'active' && onTest && (
+                    {agent.status?.toLowerCase() === 'active' && onTest && (
                       <DropdownMenuItem onClick={(e) => {
                         e.stopPropagation()
                         onTest(agent)

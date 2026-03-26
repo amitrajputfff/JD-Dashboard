@@ -2,24 +2,13 @@
 
 import * as React from "react"
 import {
-  ChevronsUpDown,
-  LogOut,
-  Sparkles,
-  CheckCircle,
-  CreditCard,
-  Bell,
-} from "lucide-react"
-import { User } from "@/types/auth"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
-
-import {
   Avatar,
   AvatarFallback,
 } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -31,49 +20,30 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { EllipsisVerticalIcon, CircleUserRoundIcon, CreditCardIcon, BellIcon, LogOutIcon } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
+import { useRouter } from "next/navigation"
 
 export function NavUser() {
-  const [mounted, setMounted] = React.useState(false)
   const { isMobile } = useSidebar()
-  const { user: currentUser, logout } = useAuth()
+  const { user, logout } = useAuth()
   const router = useRouter()
+  const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
     setMounted(true)
   }, [])
 
-  const onLogout = async () => {
-    try {
-      await logout()
-      router.push('/login')
-    } catch (error) {
-      console.error('Logout failed:', error)
-      // Force redirect even if logout fails
-      router.push('/login')
-    }
-  }
-
-  // Don't render anything until mounted (client-side only)
-  if (!mounted) {
-    return null
-  }
-
-  // If no user data at all, show loading state
-  if (!currentUser) {
+  if (!mounted || !user) {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton
-            size="lg"
-            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-          >
+          <SidebarMenuButton size="lg">
             <Avatar className="h-8 w-8 rounded-lg">
               <AvatarFallback className="rounded-lg">...</AvatarFallback>
             </Avatar>
-            <div className="grid flex-1 text-left text-xs leading-tight">
-              <span className="truncate font-semibold">Loading...</span>
-              <span className="truncate text-xs">Please wait</span>
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-medium">Loading...</span>
             </div>
           </SidebarMenuButton>
         </SidebarMenuItem>
@@ -81,14 +51,19 @@ export function NavUser() {
     )
   }
 
-  // Get user initials for fallback avatar
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
+  const getInitials = (name: string) =>
+    name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
+
+  const displayName = user.name || user.email
+  const initials = getInitials(displayName)
+
+  const onLogout = async () => {
+    try {
+      await logout()
+    } catch {
+      // continue even if logout errors
+    }
+    router.push("/login")
   }
 
   return (
@@ -100,66 +75,55 @@ export function NavUser() {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarFallback className="rounded-lg">
-                  {getInitials(currentUser.name || currentUser.email)}
-                </AvatarFallback>
+              <Avatar className="h-8 w-8 rounded-lg grayscale">
+                <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-xs leading-tight">
-                <span className="truncate font-semibold">{currentUser.name || 'User'}</span>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">{user.name || "User"}</span>
                 <span className="truncate text-xs text-muted-foreground">
-                  {currentUser.email}
+                  {user.email}
                 </span>
               </div>
-              <ChevronsUpDown className="ml-auto size-3" />
+              <EllipsisVerticalIcon className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-xs">
-                <Avatar className="h-6 w-6 rounded-lg">
-                  <AvatarFallback className="rounded-lg text-xs">
-                    {getInitials(currentUser.name || currentUser.email)}
-                  </AvatarFallback>
+              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                <Avatar className="h-8 w-8 rounded-lg">
+                  <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-left text-xs leading-tight">
-                  <span className="truncate font-semibold">{currentUser.name || 'User'}</span>
-                  {currentUser.organization && (
-                    <span className="truncate text-xs text-muted-foreground">
-                      {currentUser.organization.name}
-                    </span>
-                  )}
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-medium">{user.name || "User"}</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {user.organization?.name ?? user.email}
+                  </span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer text-xs">
-              <Sparkles className="mr-2 h-3 w-3" />
-              Upgrade to Pro
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              className="cursor-pointer text-xs"
-              onClick={() => router.push('/account')}
-            >
-              <CheckCircle className="mr-2 h-3 w-3" />
-              Account
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer text-xs">
-              <CreditCard className="mr-2 h-3 w-3" />
-              Billing
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer text-xs">
-              <Bell className="mr-2 h-3 w-3" />
-              Notifications
-            </DropdownMenuItem>
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => router.push("/account")}>
+                <CircleUserRoundIcon />
+                Account
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <CreditCardIcon />
+                Billing
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <BellIcon />
+                Notifications
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onLogout} className="cursor-pointer text-xs">
-              <LogOut className="mr-2 h-3 w-3" />
+            <DropdownMenuItem onClick={onLogout}>
+              <LogOutIcon />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

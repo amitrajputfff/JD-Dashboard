@@ -627,7 +627,7 @@ export default function PhoneNumbersPage() {
                   if (!open) resetForms()
                 }}>
                   <DialogTrigger asChild>
-                    <Button size="sm" variant="default" onClick={handleOpenAddDialog}>
+                    <Button size="default" variant="default" onClick={handleOpenAddDialog}>
                       <Plus className="mr-2 h-4 w-4" />
                       Add Phone Number
                     </Button>

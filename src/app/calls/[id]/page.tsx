@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { usePreviousPage } from '@/hooks/use-previous-page';
 import type { CallLog } from '@/types/call';
 import type { Agent } from '@/types/agent';
+import { mockCallLogs } from '@/lib/mock-data/calls';
 import { AdvancedAudioPlayer } from '@/components/ui/advanced-audio-player';
 import { PieChart, Pie, Label, Tooltip as RechartsTooltip } from 'recharts';
 import {
@@ -138,9 +139,14 @@ export default function CallDetailsPage() {
         const data = await callsApi.getCallLogById(callId);
         setCallData(data);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch call details';
-        setError(errorMessage);
-        toast.error(errorMessage);
+        // Fall back to mock data if available
+        const mockMatch = mockCallLogs.find((c) => String(c.id) === callId || c.call_sid === callId);
+        if (mockMatch) {
+          setCallData(mockMatch);
+        } else {
+          const errorMessage = err instanceof Error ? err.message : 'Failed to fetch call details';
+          setError(errorMessage);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -191,7 +197,7 @@ export default function CallDetailsPage() {
   // Show loading state
   if (isLoading) {
     return (
-      <SidebarProvider>
+      <SidebarProvider style={{ '--sidebar-width': 'calc(var(--spacing) * 72)', '--header-height': 'calc(var(--spacing) * 12)' } as React.CSSProperties}>
         <AppSidebar />
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2">
@@ -234,7 +240,7 @@ export default function CallDetailsPage() {
   // Show error state
   if (error || !callData) {
     return (
-      <SidebarProvider>
+      <SidebarProvider style={{ '--sidebar-width': 'calc(var(--spacing) * 72)', '--header-height': 'calc(var(--spacing) * 12)' } as React.CSSProperties}>
         <AppSidebar />
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2">

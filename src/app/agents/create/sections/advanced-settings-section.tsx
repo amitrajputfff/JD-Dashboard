@@ -805,7 +805,7 @@ export default function AdvancedSettingsSection({ control, watch, setValue }: Fo
                               <SelectTrigger className="h-10">
                                 <SelectValue placeholder="Select method" />
                         </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
                         <SelectItem value="GET">GET</SelectItem>
                         <SelectItem value="POST">POST</SelectItem>
                         <SelectItem value="PUT">PUT</SelectItem>
@@ -823,7 +823,7 @@ export default function AdvancedSettingsSection({ control, watch, setValue }: Fo
                               <SelectTrigger className="h-10">
                                 <SelectValue placeholder="Select format" />
                         </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
                         <SelectItem value="json">JSON</SelectItem>
                         <SelectItem value="form-data">Form Data</SelectItem>
                         <SelectItem value="raw">Raw</SelectItem>

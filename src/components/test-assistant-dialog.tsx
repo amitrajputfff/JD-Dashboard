@@ -26,13 +26,13 @@ import {
   Bot,
   AlertCircle,
   Clock,
-  X,
 } from "lucide-react"
 import { InlineLoader } from "@/components/ui/loader"
 import { WebRTCConnection, WebRTCConfig, WebRTCEventHandlers, TranscriptMessage as WebRTCTranscriptMessage } from "@/lib/webrtc-connection"
-import { AgentAudioVisualizerBar } from "@/components/agents-ui/agent-audio-visualizer-bar"
+import { AgentAudioVisualizerAura } from "@/components/agents-ui/agent-audio-visualizer-aura"
 import { cn } from "@/lib/utils"
 import type { AgentState } from "@livekit/components-react"
+import { useTheme } from "next-themes"
 
 interface TestAssistantDialogProps {
   open: boolean
@@ -92,6 +92,7 @@ export function TestAssistantDialog({
   const [isInCooldown, setIsInCooldown] = useState(false)
 
   const transcriptEndRef = useRef<HTMLDivElement>(null)
+  const { resolvedTheme } = useTheme()
 
   const agentState = useMemo(
     () => toAgentState(connectionStatus, isCallActive, isUserSpeaking),
@@ -329,14 +330,6 @@ export function TestAssistantDialog({
             </div>
           </div>
 
-          {/* Close */}
-          <button
-            onClick={() => handleOpenChange(false)}
-            className="rounded-full h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0 ml-2"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
         </div>
 
         {/* ── Error alert ─────────────────────────────────────────────── */}
@@ -350,7 +343,7 @@ export function TestAssistantDialog({
         )}
 
         {/* ── Main content ────────────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col min-h-0 relative">
+        <div className="flex-1 flex flex-col min-h-[320px] relative">
 
           {/* Visualizer + status panel — shown when transcript is hidden */}
           <div
@@ -359,38 +352,28 @@ export function TestAssistantDialog({
               showTranscript ? "opacity-0 pointer-events-none" : "opacity-100",
             )}
           >
-            {/* Visualizer */}
-            <div className="flex flex-col items-center gap-6 px-6 py-8">
-              {/* Large avatar ring */}
-              <div className="relative">
-                <div
-                  className={cn(
-                    "h-24 w-24 rounded-full flex items-center justify-center border-2 transition-all duration-500",
-                    connectionStatus === "connected"
-                      ? "border-primary/40 bg-gradient-to-br from-primary/15 to-primary/5 shadow-lg shadow-primary/10"
-                      : connectionStatus === "connecting"
-                        ? "border-blue-400/40 bg-gradient-to-br from-blue-500/10 to-blue-500/5 animate-pulse"
-                        : "border-border/50 bg-muted/30",
-                  )}
-                >
-                  <span className="text-2xl font-bold text-primary/60">{initials}</span>
-                </div>
-                {/* Pulse ring when active */}
-                {isCallActive && (
-                  <span className="absolute inset-0 rounded-full border border-primary/20 animate-ping opacity-50" />
+            {/* Aura Visualizer — covers all states */}
+            <div className="flex flex-col items-center justify-center gap-5 px-6 py-6 h-full">
+              {/* Aura fills the center */}
+              <div className="relative flex items-center justify-center w-48 h-48">
+                <AgentAudioVisualizerAura
+                  size="xl"
+                  color="#1FD5F9"
+                  colorShift={0.3}
+                  state={agentState}
+                  themeMode={(resolvedTheme === "dark" ? "dark" : "light")}
+                  className="aspect-square w-full h-full"
+                />
+                {/* Initials overlay when disconnected */}
+                {!isCallActive && connectionStatus !== "connecting" && (
+                  <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-primary/40 pointer-events-none">
+                    {initials}
+                  </span>
                 )}
               </div>
 
-              {/* AgentAudioVisualizerBar — works without LiveKit context */}
-              <AgentAudioVisualizerBar
-                size="sm"
-                state={agentState}
-                barCount={5}
-                className="text-primary"
-              />
-
               {/* Status text */}
-              <div className="flex flex-col items-center gap-1 text-center">
+              <div className="flex flex-col items-center gap-1.5 text-center">
                 {connectionStatus === "connecting" && (
                   <div className="flex items-center gap-2 text-blue-600">
                     <InlineLoader size="sm" />
@@ -400,14 +383,14 @@ export function TestAssistantDialog({
                 {connectionStatus === "connected" && (
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-sm font-medium text-green-600">Live</span>
+                    <span className="text-sm font-semibold text-green-600">Live</span>
                     <span className="text-sm font-mono text-muted-foreground tabular-nums">
                       {formatDuration(callDuration)}
                     </span>
                   </div>
                 )}
                 {isUserSpeaking && connectionStatus === "connected" && (
-                  <span className="text-xs text-muted-foreground">Listening to you...</span>
+                  <span className="text-xs text-muted-foreground animate-pulse">Listening...</span>
                 )}
                 {!isCallActive && connectionStatus !== "connecting" && !isInCooldown && (
                   <span className="text-sm text-muted-foreground">
@@ -423,7 +406,7 @@ export function TestAssistantDialog({
                   </div>
                 )}
                 {connectionStatus === "failed" && !isInCooldown && (
-                  <span className="text-sm text-destructive font-medium">Connection failed</span>
+                  <span className="text-sm text-destructive font-medium">Connection failed — try again</span>
                 )}
               </div>
             </div>

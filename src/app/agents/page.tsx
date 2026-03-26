@@ -346,9 +346,11 @@ export default function AgentsPage() {
   }, [])
 
   // Show loading state while checking organization ID
+  const sidebarStyle = { '--sidebar-width': 'calc(var(--spacing) * 72)', '--header-height': 'calc(var(--spacing) * 12)' } as React.CSSProperties
+
   if (isCheckingOrg) {
     return (
-      <SidebarProvider>
+      <SidebarProvider style={sidebarStyle}>
         <AppSidebar />
         <SidebarInset>
           <div className="flex items-center justify-center min-h-[400px] w-full">
@@ -362,7 +364,7 @@ export default function AgentsPage() {
   // Show no organization message if no org ID (but continue with normal flow)
   if (!organizationId && !isCheckingOrg) {
     return (
-      <SidebarProvider>
+      <SidebarProvider style={sidebarStyle}>
         <AppSidebar />
         <SidebarInset className="flex items-center justify-center min-h-screen">
           <NoOrganization />
@@ -374,7 +376,7 @@ export default function AgentsPage() {
   return (
     <>
       <TutorialOverlay />
-      <SidebarProvider>
+      <SidebarProvider style={sidebarStyle}>
         <AppSidebar />
         <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2">
@@ -425,13 +427,13 @@ export default function AgentsPage() {
               </div>
               <div className="flex items-center gap-2">
               <ExportDataDialog defaultExportType="assistants">
-                  <Button size="sm" variant="outline">
+                  <Button size="default" variant="outline">
                     Export Data
                   </Button>
                 </ExportDataDialog>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="default"
                   onClick={() => router.push('/agents/deleted')}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
@@ -442,12 +444,10 @@ export default function AgentsPage() {
                     </span>
                   )}
                 </Button>
-                <CreateAgentDialog>
-                  <Button size="sm" variant="default" data-tutorial="create-agent-button-header">
-                    <Bot className="mr-2 h-4 w-4" />
-                    Create Agent
-                  </Button>
-                </CreateAgentDialog>
+                <Button size="default" variant="default" data-tutorial="create-agent-button-header" onClick={() => router.push('/agents/create')}>
+                  <Bot className="mr-2 h-4 w-4" />
+                  Create Agent
+                </Button>
               </div>
             </div>
 
@@ -491,7 +491,7 @@ export default function AgentsPage() {
                 <Button
                     variant={showDrafts ? "default" : "outline"}
                     size="sm"
-                    className="h-full"
+                    className="h-9"
                     onClick={() => setShowDrafts(!showDrafts)}
                   >
                     Show Drafts Only
@@ -631,12 +631,10 @@ export default function AgentsPage() {
                       Clear Filters
                     </Button>
                   ) : (
-                    <CreateAgentDialog>
-                      <Button size="default" data-tutorial="create-agent-button">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Create Your First Agent
-                      </Button>
-                    </CreateAgentDialog>
+                    <Button size="default" data-tutorial="create-agent-button" onClick={() => router.push('/agents/create')}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create Your First Agent
+                    </Button>
                   )}
                 </EmptyContent>
               </Empty>
@@ -683,7 +681,7 @@ export default function AgentsPage() {
             open={showTestDialog}
             onOpenChange={setShowTestDialog}
             assistant={selectedAgentForTest ? {
-              id: String(selectedAgentForTest.id),
+              id: selectedAgentForTest.assistant_id || String(selectedAgentForTest.id),
               name: selectedAgentForTest.name,
               description: selectedAgentForTest.description || "No description available",
               status: selectedAgentForTest.status as "active" | "inactive"

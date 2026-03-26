@@ -557,8 +557,8 @@ Remember to stay focused on ${generateInput} while being helpful and responsive 
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
+      <div className="grid grid-cols-1 gap-5">
+
         {/* LLM Provider */}
         <FormField
           control={control}
@@ -590,7 +590,7 @@ Remember to stay focused on ${generateInput} while being helpful and responsive 
                     </SelectValue>
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
                   {providersLoading ? (
                     <SelectItem value="loading" disabled>
                       <InlineLoader size="sm" className="mr-2" />
@@ -674,7 +674,7 @@ Remember to stay focused on ${generateInput} while being helpful and responsive 
                     </SelectValue>
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
                   {!watchedLLMProviderId ? (
                     <SelectItem value="no-provider" disabled>
                       Please select a provider first
