@@ -1,0 +1,39 @@
+services:
+  app:
+    build:
+      context: .
+      target: final
+    container_name: liaplus-app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/letsencrypt:ro
+      - ./logs/nginx:/var/log/nginx
+    environment:
+      - NODE_ENV=production
+    networks:
+      - liaplus-network
+
+  # Optional: Certbot service for automatic SSL renewal
+  certbot:
+    image: certbot/certbot
+    container_name: liaplus-certbot
+    volumes:
+      - ./ssl:/etc/letsencrypt
+      - ./logs/certbot:/var/log/letsencrypt
+    command: certonly --webroot --webroot-path=/var/www/html --email your-email@example.com --agree-tos --no-eff-email -d app.liaplus.com
+    depends_on:
+      - app
+    networks:
+      - liaplus-network
+
+networks:
+  liaplus-network:
+    driver: bridge
+
+volumes:
+  ssl:
+  logs:

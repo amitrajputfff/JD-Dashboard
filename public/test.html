@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lia Widget Test</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            color: #333;
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+        }
+        .subtitle {
+            color: #16a34a;
+            font-weight: 600;
+            font-size: 1.125rem;
+            margin: 0 0 1.5rem 0;
+        }
+        .alert {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .alert p {
+            margin: 0;
+            color: #78350f;
+            font-size: 0.9375rem;
+            line-height: 1.6;
+        }
+        .info {
+            background: #eff6ff;
+            border: 1px solid #3b82f6;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .info h3 {
+            margin: 0 0 0.75rem 0;
+            color: #1e40af;
+            font-size: 1rem;
+        }
+        .config {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            color: #334155;
+        }
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #9333ea;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(147, 51, 234, 0.2);
+        }
+        button:hover {
+            background: #7e22ce;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(147, 51, 234, 0.3);
+        }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            margin: 1rem 0;
+        }
+        .code-block pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+        code {
+            background: #1e293b;
+            color: #60a5fa;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+        .note {
+            background: #f1f5f9;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 0.25rem;
+        }
+        .note p {
+            margin: 0;
+            color: #475569;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Lia Widget Test</h1>
+        <p class="subtitle">✅ Iframe Embed (embed.js) - Production Ready!</p>
+        
+        <div class="alert">
+            <p>
+                <strong>⚠️ Local Development:</strong> Make sure dev server is running<br>
+                <code>npm run dev</code> → Open <code>http://localhost:3000/test.html</code>
+            </p>
+        </div>
+
+        <div class="info">
+            <h3>📋 Your Configuration</h3>
+            <div class="config">
+assistant-id: fbd28c61-f1a8-4d2c-9fb7-2d40f90483c0<br>
+mode: both (Chat + Voice)<br>
+languages:<br>
+  - English: 4aa42d0d-8d8a-4e46-abd1-459659882456<br>
+  - Hindi: fbd28c61-f1a8-4d2c-9fb7-2d40f90483c0 (default)
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="LiaWidget.open()">📱 Open Widget</button>
+            <button onclick="LiaWidget.close()">❌ Close Widget</button>
+            <button onclick="LiaWidget.toggle()">🔄 Toggle</button>
+        </div>
+
+        <div class="note">
+            <p>
+                <strong>👀 Look for the widget in the bottom-right corner!</strong><br>
+                Click the button to test chat and voice features.
+            </p>
+        </div>
+
+        <h3 style="color: #334155; margin: 2rem 0 0.75rem 0;">📦 Local Development Code (Minimal):</h3>
+        <div class="code-block">
+            <pre>&lt;script 
+    src="http://localhost:3000/embed.js"
+    data-assistant-id="fbd28c61-f1a8-4d2c-9fb7-2d40f90483c0"
+    data-mode="both"
+    data-position="bottom-left"
+    data-agent-display-name="Lia"
+    data-language-selector-enabled="true"
+    data-languages='[{"name":"English","assistantId":"4aa42d0d-8d8a-4e46-abd1-459659882456"},{"name":"Hindi","assistantId":"fbd28c61-f1a8-4d2c-9fb7-2d40f90483c0"}]'
+&gt;&lt;/script&gt;</pre>
+        </div>
+
+        <h3 style="color: #334155; margin: 2rem 0 0.75rem 0;">🎨 With All Customizations:</h3>
+        <div class="code-block">
+            <pre>&lt;script 
+    src="http://localhost:3000/embed.js"
+    data-assistant-id="fbd28c61-f1a8-4d2c-9fb7-2d40f90483c0"
+    data-mode="both"
+    data-theme="light"
+    data-position="bottom-left"
+    data-size="full"
+    data-border-radius="large"
+    data-base-bg-color="#ffffff"
+    data-accent-color="#9333ea"
+    data-cta-button-color="#000000"
+    data-cta-button-text-color="#ffffff"
+    data-title="TALK WITH AI"
+    data-start-button-text="Start"
+    data-end-button-text="End Call"
+    data-chat-first-message="Hey, How can I help you today?"
+    data-chat-placeholder="Type your message..."
+    data-voice-show-transcript="true"
+    data-agent-display-name="Lia"
+    data-language-selector-enabled="true"
+    data-languages='[{"name":"English","assistantId":"4aa42d0d-8d8a-4e46-abd1-459659882456"},{"name":"Hindi","assistantId":"fbd28c61-f1a8-4d2c-9fb7-2d40f90483c0"}]'
+&gt;&lt;/script&gt;</pre>
+        </div>
+
+        <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: 0.5rem; padding: 1rem; margin: 1rem 0;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #1e40af; font-size: 0.9375rem;">📝 All Available Configuration Options:</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.75rem;">
+                <div>
+                    <strong style="color: #1e40af; font-size: 0.8125rem;">Display & Layout:</strong>
+                    <ul style="margin: 0.25rem 0 0 0; padding-left: 1.25rem; color: #475569; font-size: 0.8125rem;">
+                        <li><code>data-mode</code>: chat | voice | both</li>
+                        <li><code>data-theme</code>: light | dark | auto</li>
+                        <li><code>data-position</code>: bottom-right | bottom-left | top-right | top-left</li>
+                        <li><code>data-size</code>: small | medium | large | full</li>
+                        <li><code>data-border-radius</code>: none | small | medium | large</li>
+                    </ul>
+                </div>
+                <div>
+                    <strong style="color: #1e40af; font-size: 0.8125rem;">Colors:</strong>
+                    <ul style="margin: 0.25rem 0 0 0; padding-left: 1.25rem; color: #475569; font-size: 0.8125rem;">
+                        <li><code>data-base-bg-color</code>: #ffffff</li>
+                        <li><code>data-accent-color</code>: #9333ea</li>
+                        <li><code>data-cta-button-color</code>: #000000</li>
+                        <li><code>data-cta-button-text-color</code>: #ffffff</li>
+                    </ul>
+                </div>
+                <div>
+                    <strong style="color: #1e40af; font-size: 0.8125rem;">Text Content:</strong>
+                    <ul style="margin: 0.25rem 0 0 0; padding-left: 1.25rem; color: #475569; font-size: 0.8125rem;">
+                        <li><code>data-title</code>: Button text</li>
+                        <li><code>data-start-button-text</code>: Start button</li>
+                        <li><code>data-end-button-text</code>: End button</li>
+                        <li><code>data-chat-first-message</code>: Welcome msg</li>
+                        <li><code>data-chat-placeholder</code>: Input placeholder</li>
+                        <li><code>data-agent-display-name</code>: Agent name</li>
+                    </ul>
+                </div>
+                <div>
+                    <strong style="color: #1e40af; font-size: 0.8125rem;">Features:</strong>
+                    <ul style="margin: 0.25rem 0 0 0; padding-left: 1.25rem; color: #475569; font-size: 0.8125rem;">
+                        <li><code>data-custom-image-url</code>: Logo URL</li>
+                        <li><code>data-help-texts</code>: Comma-separated list</li>
+                        <li><code>data-voice-show-transcript</code>: true/false</li>
+                        <li><code>data-consent-required</code>: true/false</li>
+                        <li><code>data-language-selector-enabled</code>: true/false</li>
+                        <li><code>data-languages</code>: JSON array</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <h3 style="color: #334155; margin: 2rem 0 0.75rem 0;">🎨 Example Configurations:</h3>
+        
+        <div style="background: #1f2937; color: #f3f4f6; border-radius: 0.5rem; padding: 1rem; margin: 1rem 0;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #60a5fa; font-size: 0.875rem;">🌙 Dark Theme with Custom Colors:</h4>
+            <pre style="margin: 0; overflow-x: auto; font-size: 0.75rem; color: #e5e7eb;">&lt;script src="http://localhost:3000/embed.js"
+    data-assistant-id="your-id"
+    data-theme="dark"
+    data-base-bg-color="#1f2937"
+    data-accent-color="#3b82f6"
+    data-cta-button-color="#3b82f6"
+    data-cta-button-text-color="#ffffff"
+&gt;&lt;/script&gt;</pre>
+        </div>
+
+        <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 0.5rem; padding: 1rem; margin: 1rem 0;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #92400e; font-size: 0.875rem;">🖼️ Custom Logo Example:</h4>
+            <pre style="margin: 0; overflow-x: auto; font-size: 0.75rem; color: #78350f;">&lt;script src="http://localhost:3000/embed.js"
+    data-assistant-id="your-id"
+    data-custom-image-url="https://yourdomain.com/logo.png"
+    data-help-texts="Ask Us,Need Help?,Chat Now"
+&gt;&lt;/script&gt;</pre>
+        </div>
+
+        <div style="background: #f0fdf4; border: 1px solid #16a34a; border-radius: 0.5rem; padding: 1rem; margin: 1rem 0;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #15803d; font-size: 0.875rem;">🎯 Different Position Example:</h4>
+            <pre style="margin: 0; overflow-x: auto; font-size: 0.75rem; color: #166534;">&lt;script src="http://localhost:3000/embed.js"
+    data-assistant-id="your-id"
+    data-position="top-left"
+    data-size="small"
+    data-border-radius="none"
+&gt;&lt;/script&gt;</pre>
+        </div>
+
+        <h3 style="color: #334155; margin: 2rem 0 0.75rem 0;">🚀 Production Code (After Deployment):</h3>
+        <div class="note">
+            <p>
+                After deploying to <strong>app.liaplus.com</strong>, just change the URL:
+            </p>
+        </div>
+        <div class="code-block">
+            <pre>&lt;script 
+    src="https://app.liaplus.com/embed.js"
+    data-assistant-id="fbd28c61-f1a8-4d2c-9fb7-2d40f90483c0"
+    data-mode="both"
+    data-agent-display-name="Lia"
+    data-language-selector-enabled="true"
+    data-languages='[{"name":"English","assistantId":"4aa42d0d-8d8a-4e46-abd1-459659882456"},{"name":"Hindi","assistantId":"fbd28c61-f1a8-4d2c-9fb7-2d40f90483c0"}]'
+&gt;&lt;/script&gt;</pre>
+        </div>
+
+        <div style="background: #f0fdf4; border: 1px solid #16a34a; border-radius: 0.5rem; padding: 1.5rem; margin-top: 2rem;">
+            <h3 style="margin: 0 0 0.5rem 0; color: #15803d;">✨ Why embed.js (Iframe Approach)?</h3>
+            <p style="margin: 0; color: #166534; line-height: 1.6;">
+                • <strong>All icons work perfectly</strong> (uses React + Lucide icons)<br>
+                • <strong>Complete isolation</strong> - No CSS/JS conflicts with your site<br>
+                • <strong>Fully transparent when collapsed</strong> - No visible borders<br>
+                • <strong>Non-blocking</strong> - Doesn't interfere with page clicks<br>
+                • <strong>Easy updates</strong> - Update widget without touching client sites<br>
+                • <strong>Proven approach</strong> - Used by Intercom, Drift, LiveChat<br>
+                • <strong>Single file</strong> - Just include embed.js
+            </p>
+        </div>
+
+        <div style="margin-top: 2rem; padding: 1rem; background: #f8fafc; border-radius: 0.5rem; text-align: center;">
+            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">
+                📖 Deployment Guide: <code style="background: #e2e8f0; padding: 0.25rem 0.5rem; border-radius: 0.25rem; color: #334155;">DEPLOYMENT-GUIDE.txt</code>
+            </p>
+        </div>
+    </div>
+
+    <!-- WIDGET EMBED - FULL CONFIGURATION EXAMPLE -->
+    <script 
+        src="http://localhost:3000/embed.js"
+        data-assistant-id="fbd28c61-f1a8-4d2c-9fb7-2d40f90483c0"
+        data-mode="both"
+        data-theme="light"
+        data-position="bottom-right"
+        data-size="full"
+        data-border-radius="large"
+        data-base-bg-color="#ffffff"
+        data-accent-color="#9333ea"
+        data-cta-button-color="#000000"
+        data-cta-button-text-color="#ffffff"
+        data-title="TALK WITH AI"
+        data-start-button-text="Start"
+        data-end-button-text="End Call"
+        data-chat-first-message="Hey, How can I help you today?"
+        data-chat-placeholder="Type your message..."
+        data-voice-show-transcript="true"
+        data-consent-required="true"
+        data-agent-display-name="Lia"
+        data-help-texts="Ask Lia,Talk to Lia,Chat with Lia,Need Help?,Ask Anything,Get Answers"
+        data-language-selector-enabled="true"
+        data-languages='[{"name":"English","assistantId":"4aa42d0d-8d8a-4e46-abd1-459659882456"},{"name":"Hindi","assistantId":"fbd28c61-f1a8-4d2c-9fb7-2d40f90483c0"}]'
+    ></script>
+</body>
+</html>
+
