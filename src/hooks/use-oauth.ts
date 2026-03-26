@@ -134,7 +134,7 @@ export const useOAuth = () => {
           action: {
             label: 'Contact Support',
             onClick: () => {
-              window.open('mailto:shailesh@liaplus.com?subject=OAuth Login Issue&body=Error: ' + encodeURIComponent(errorMessage), '_blank')
+              window.open('mailto:admin@justdial.com?subject=OAuth Login Issue&body=Error: ' + encodeURIComponent(errorMessage), '_blank')
             }
           }
         });

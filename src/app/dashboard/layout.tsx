@@ -16,6 +16,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { AuthGuard } from "@/components/auth-guard"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 export default function DashboardLayout({
   children,
@@ -24,6 +25,7 @@ export default function DashboardLayout({
 }) {
   return (
     <AuthGuard>
+      <TooltipProvider>
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
@@ -38,7 +40,7 @@ export default function DashboardLayout({
                 <BreadcrumbList>
                   <BreadcrumbItem className="hidden md:block">
                     <BreadcrumbLink href="/dashboard" className="text-sm">
-                      Liaplus AI
+                      JustDial
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator className="hidden md:block" />
@@ -54,6 +56,7 @@ export default function DashboardLayout({
           </main>
         </SidebarInset>
       </SidebarProvider>
+      </TooltipProvider>
     </AuthGuard>
   )
 }

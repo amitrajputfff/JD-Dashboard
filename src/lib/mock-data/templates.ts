@@ -47,7 +47,7 @@ Always be patient, understanding, and solution-oriented. If you don't know somet
       silenceTimeout: 8
     },
     metadata: {
-      createdBy: 'LiaPlus Team',
+      createdBy: 'JustDial Team',
       createdAt: '2024-01-10T00:00:00Z',
       updatedAt: '2024-01-15T00:00:00Z',
       version: '1.2',
@@ -124,7 +124,7 @@ Be friendly but professional. Ask open-ended questions to understand their busin
       silenceTimeout: 6
     },
     metadata: {
-      createdBy: 'LiaPlus Team',
+      createdBy: 'JustDial Team',
       createdAt: '2024-01-08T00:00:00Z',
       updatedAt: '2024-01-14T00:00:00Z',
       version: '1.1',
@@ -202,7 +202,7 @@ IMPORTANT: Never provide medical advice. Always maintain patient confidentiality
       silenceTimeout: 10
     },
     metadata: {
-      createdBy: 'LiaPlus Healthcare',
+      createdBy: 'JustDial Healthcare',
       createdAt: '2024-01-12T00:00:00Z',
       updatedAt: '2024-01-16T00:00:00Z',
       version: '1.0',

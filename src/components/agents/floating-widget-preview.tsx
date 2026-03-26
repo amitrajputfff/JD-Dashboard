@@ -637,7 +637,7 @@ export function FloatingWidgetPreview({ agent, widgetConfig }: FloatingWidgetPre
     }
 
     const config: WebRTCConfig = {
-      serverUrl: 'https://core.liaplus.com',
+      serverUrl: '',
       assistantId: selectedAssistantId,
       turnHost: '13.204.190.15',
       turnUsername: 'botuser',

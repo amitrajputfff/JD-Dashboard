@@ -499,7 +499,7 @@ export const users: User[] = [
   {
     id: 1,
     name: "John Smith",
-    email: "john.smith@liaplus.ai",
+    email: "john.smith@justdial.com",
     roles: [roles[0]], // Super Admin
     securityGroups: [securityGroups[0]], // Executive Team
     is_active: true,
@@ -509,7 +509,7 @@ export const users: User[] = [
   {
     id: 2,
     name: "Sarah Johnson",
-    email: "sarah.johnson@liaplus.ai",
+    email: "sarah.johnson@justdial.com",
     roles: [roles[1]], // Org Admin
     securityGroups: [securityGroups[0]], // Executive Team
     is_active: true,
@@ -519,7 +519,7 @@ export const users: User[] = [
   {
     id: 3,
     name: "Mike Chen",
-    email: "mike.chen@liaplus.ai",
+    email: "mike.chen@justdial.com",
     roles: [roles[2], roles[3]], // Assistant Manager, Call Analyst
     securityGroups: [securityGroups[1], securityGroups[2]], // Engineering, Operations
     is_active: true,
@@ -529,7 +529,7 @@ export const users: User[] = [
   {
     id: 4,
     name: "Emily Davis",
-    email: "emily.davis@liaplus.ai",
+    email: "emily.davis@justdial.com",
     roles: [roles[3]], // Call Analyst
     securityGroups: [securityGroups[4]], // Data Analytics
     is_active: true,
@@ -539,7 +539,7 @@ export const users: User[] = [
   {
     id: 5,
     name: "David Wilson",
-    email: "david.wilson@liaplus.ai",
+    email: "david.wilson@justdial.com",
     roles: [roles[4]], // Support Agent
     securityGroups: [securityGroups[3]], // Customer Success
     is_active: true,
@@ -549,7 +549,7 @@ export const users: User[] = [
   {
     id: 6,
     name: "Lisa Anderson",
-    email: "lisa.anderson@liaplus.ai",
+    email: "lisa.anderson@justdial.com",
     roles: [roles[5]], // Read-Only User
     securityGroups: [securityGroups[3]], // Customer Success
     is_active: false,

@@ -144,7 +144,7 @@ export function WidgetSection({ agent }: WidgetSectionProps) {
 
   // Generate optimized widget script for embed.js
   const generateWidgetScript = () => {
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.liaplus.com';
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://justdial.com';
     
     // Build data attributes array with only non-default values
     const attributes: string[] = [];

@@ -83,7 +83,7 @@ export function WelcomeTutorialPopover({ className }: WelcomeTutorialPopoverProp
               </div>
               
               <CardTitle className="text-xl font-bold">
-                Welcome to LiaPlus AI! 🎉
+                Welcome to JustDial!
               </CardTitle>
               <CardDescription className="text-sm">
                 Let&apos;s get you started with creating your first AI voice agent

@@ -33,6 +33,6 @@ export const testimonials = [
     id: 6,
     name: "RP Singh",
     designation: "Metalbook",
-    content: "Liaplus transformed our customer engagement. Their AI call bot integrates seamlessly, captures leads in real-time, and handles multilingual enquiries intelligently. Significant improvements in response times and conversions.",
+    content: "JustDial transformed our customer engagement. Their AI call bot integrates seamlessly, captures leads in real-time, and handles multilingual enquiries intelligently. Significant improvements in response times and conversions.",
   },
 ];

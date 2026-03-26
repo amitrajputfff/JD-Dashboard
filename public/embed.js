@@ -184,7 +184,7 @@
       var assistantId = getAttr('data-assistant-id', '');
       var mode = getAttr('data-mode', 'both');
       var agentDisplayName = getAttr('data-agent-display-name', 'Lia');
-      var serverUrl = getAttr('data-server-url', 'https://core.liaplus.com');
+      var serverUrl = getAttr('data-server-url', '');
       var theme = getAttr('data-theme', 'light');
       var position = getAttr('data-position', 'bottom-right');
       var size = getAttr('data-size', 'full');

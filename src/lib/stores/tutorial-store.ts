@@ -75,7 +75,7 @@ type TutorialStore = TutorialState & TutorialActions;
 const agentCreationSteps: TutorialStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to LiaPlus AI! 🎉',
+    title: 'Welcome to JustDial! 🎉',
     description: 'Let\'s create your first AI agent together',
     target: 'body',
     position: 'center',

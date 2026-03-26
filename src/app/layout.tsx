@@ -25,7 +25,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Liaplus AI - Voice Agent Platform",
+  title: "JustDial - Voice Agent Platform",
   description: "Professional AI voice agent management platform with advanced analytics and intelligent call automation",
 };
 

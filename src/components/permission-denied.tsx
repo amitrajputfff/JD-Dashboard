@@ -177,7 +177,7 @@ Best regards,
 Your Helpless User`;
                 
                 // Open Gmail in browser with pre-filled email
-                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=shailesh@liaplus.com&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=admin@justdial.com&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
                 window.open(gmailUrl, '_blank');
               }}
               className="text-xs underline text-primary hover:text-primary/80 cursor-pointer font-medium"

@@ -20,7 +20,7 @@
 
 // Get client parameter from URL
 function getRuntimeClient(): string {
-  if (typeof window === 'undefined') return 'liaplusai';
+  if (typeof window === 'undefined') return 'justdial';
 
   try {
     const urlParams = new URLSearchParams(window.location.search);
@@ -30,7 +30,7 @@ function getRuntimeClient(): string {
     // ignore
   }
 
-  return 'liaplusai'; // Default fallback
+  return 'justdial'; // Default fallback
 }
 
 export const WIDGET_CONFIG = {

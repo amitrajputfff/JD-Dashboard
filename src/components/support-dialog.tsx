@@ -116,7 +116,7 @@ const categories = [
 const contactMethods = [
   {
     method: 'Email Support',
-    value: 'shailesh@liaplus.com',
+    value: 'admin@justdial.com',
     icon: Mail,
     description: 'Get help via email',
     responseTime: '24-48 hours',
@@ -160,7 +160,7 @@ const resources = [
     title: 'Video Tutorials',
     description: 'Step-by-step video guides',
     icon: Video,
-    url: 'https://youtube.com/liaplus',
+    url: 'https://youtube.com/justdial',
     type: 'external'
   }
 ];
@@ -787,7 +787,7 @@ export function SupportDialog({ children }: SupportDialogProps) {
                         Headquarters
                       </h4>
                       <address className="text-sm text-muted-foreground not-italic">
-                        LiaPlus AI Inc.<br />
+                        JustDial<br />
                         123 Innovation Drive<br />
                         San Francisco, CA 94105<br />
                         United States
@@ -894,7 +894,7 @@ export function SupportDialog({ children }: SupportDialogProps) {
                           Schedule a Demo
                         </h4>
                         <p className="text-xs text-muted-foreground mt-1 mb-3">
-                          Book a personalized demo to learn more about LiaPlus AI features and capabilities.
+                          Book a personalized demo to learn more about JustDial features and capabilities.
                         </p>
                         <Button variant="outline" size="sm" className="h-7 text-xs">
                           Schedule Demo

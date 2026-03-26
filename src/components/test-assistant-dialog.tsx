@@ -215,7 +215,7 @@ export function TestAssistantDialog({
     }
 
     const config: WebRTCConfig = {
-      serverUrl: 'https://core.liaplus.com',
+      serverUrl: '',
       assistantId: assistant.id,
       turnHost: '13.204.190.15',
       turnUsername: 'botuser',
