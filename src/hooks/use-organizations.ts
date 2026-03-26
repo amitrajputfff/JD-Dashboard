@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { authApi } from '@/lib/api/auth';
+import { useState, useCallback } from 'react';
 
 export interface Organization {
   id: string;
@@ -17,106 +16,52 @@ export interface UseOrganizationsReturn {
   refreshOrganizations: () => Promise<void>;
 }
 
+const MOCK_ORGANIZATIONS: Record<string, Organization> = {
+  'org-demo-123': { id: 'org-demo-123', name: 'Demo Organization' },
+};
+
 export function useOrganizations(): UseOrganizationsReturn {
-  const [organizations, setOrganizations] = useState<Record<string, Organization>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [fetchingOrgs, setFetchingOrgs] = useState<Set<string>>(new Set());
+  const [organizations, setOrganizations] = useState<Record<string, Organization>>(MOCK_ORGANIZATIONS);
+  const [isLoading] = useState(false);
+  const [error] = useState<string | null>(null);
 
-  // Fetch a single organization by ID
   const fetchOrganization = useCallback(async (orgId: string) => {
-    // Skip if already cached or currently fetching
-    if (organizations[orgId] || fetchingOrgs.has(orgId)) {
-      return;
-    }
-
-    setFetchingOrgs(prev => new Set(prev).add(orgId));
-    setError(null);
-
-    try {
-      const orgData = await authApi.getOrganization(orgId);
-      setOrganizations(prev => ({
+    // Return mock data; if unknown ID, derive a placeholder name
+    if (!organizations[orgId]) {
+      setOrganizations((prev) => ({
         ...prev,
-        [orgId]: {
-          id: orgData.id,
-          name: orgData.name
-        }
+        [orgId]: { id: orgId, name: 'Demo Organization' },
       }));
-    } catch (err) {
-      console.error(`Error fetching organization ${orgId}:`, err);
-      // Don't set error for individual org failures, just log them
-    } finally {
-      setFetchingOrgs(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(orgId);
-        return newSet;
-      });
     }
-  }, [organizations, fetchingOrgs]);
+  }, [organizations]);
 
-  // Fetch multiple organizations
   const fetchOrganizations = useCallback(async (orgIds: string[]) => {
-    const uniqueOrgIds = Array.from(new Set(orgIds));
-    const orgsToFetch = uniqueOrgIds.filter(orgId => !organizations[orgId] && !fetchingOrgs.has(orgId));
-    
-    if (orgsToFetch.length === 0) {
-      return;
+    const updates: Record<string, Organization> = {};
+    orgIds.forEach((orgId) => {
+      if (!organizations[orgId]) {
+        updates[orgId] = { id: orgId, name: 'Demo Organization' };
+      }
+    });
+    if (Object.keys(updates).length > 0) {
+      setOrganizations((prev) => ({ ...prev, ...updates }));
     }
+  }, [organizations]);
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Fetch all organizations in parallel
-      const fetchPromises = orgsToFetch.map(orgId => fetchOrganization(orgId));
-      await Promise.allSettled(fetchPromises);
-    } catch (err) {
-      console.error('Error fetching organizations:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch organizations');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [organizations, fetchingOrgs, fetchOrganization]);
-
-  // Refresh all cached organizations
   const refreshOrganizations = useCallback(async () => {
-    const orgIds = Object.keys(organizations);
-    if (orgIds.length === 0) {
-      return;
-    }
+    setOrganizations(MOCK_ORGANIZATIONS);
+  }, []);
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Clear cache and refetch
-      setOrganizations({});
-      const fetchPromises = orgIds.map(orgId => fetchOrganization(orgId));
-      await Promise.allSettled(fetchPromises);
-    } catch (err) {
-      console.error('Error refreshing organizations:', err);
-      setError(err instanceof Error ? err.message : 'Failed to refresh organizations');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [organizations, fetchOrganization]);
-
-  // Get organization display name
   const getOrganizationName = useCallback((orgId: string): string => {
     const org = organizations[orgId];
     if (org) {
       return org.name;
     }
-    
-    // For unknown organizations, create a readable format from the ID
     const shortId = orgId.substring(0, 8);
     return `Organization ${shortId.toUpperCase()}`;
   }, [organizations]);
 
-  // Get organization short name for compact display
   const getOrganizationShortName = useCallback((orgId: string): string => {
     const fullName = getOrganizationName(orgId);
-    // If it's a mapped name, return first word + first letter of second word
     if (fullName.includes(' ')) {
       const words = fullName.split(' ');
       return words.length > 1 ? `${words[0]} ${words[1].charAt(0)}.` : words[0];
@@ -132,6 +77,6 @@ export function useOrganizations(): UseOrganizationsReturn {
     getOrganizationShortName,
     fetchOrganization,
     fetchOrganizations,
-    refreshOrganizations
+    refreshOrganizations,
   };
 }

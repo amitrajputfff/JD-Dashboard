@@ -593,12 +593,28 @@ export default function PhoneNumbersPage() {
 
         <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight">Phone Numbers</h1>
-                <p className="text-sm text-muted-foreground">
-                  Manage phone numbers and assign them to your AI agents
-                </p>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/10 text-primary rounded-lg p-2">
+                  <PhoneIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight">Phone Numbers</h1>
+                  <p className="text-sm text-muted-foreground">
+                    Manage phone numbers and assign them to your AI agents
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                      {totalItems} total
+                    </span>
+                    <span className="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-300">
+                      {phoneNumbers.filter(p => p.is_active).length} active
+                    </span>
+                    <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
+                      {phoneNumbers.filter(p => !p.is_active).length} inactive
+                    </span>
+                  </div>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <ExportDataDialog defaultExportType="phone_numbers">
@@ -611,9 +627,9 @@ export default function PhoneNumbersPage() {
                   if (!open) resetForms()
                 }}>
                   <DialogTrigger asChild>
-                    <Button size="sm" onClick={handleOpenAddDialog}>
+                    <Button size="sm" variant="default" onClick={handleOpenAddDialog}>
                       <Plus className="mr-2 h-4 w-4" />
-                      Add Number
+                      Add Phone Number
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-lg">

@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { agentsApi } from '@/lib/api/agents';
+import { useState, useCallback, useMemo } from 'react';
+import { mockAgents } from '@/lib/mock-data/agents';
 import { Agent } from '@/types/agent';
-import { AssistantsApiResponse } from '@/types/api';
 
 interface UseAgentsApiParams {
   skip?: number;
@@ -26,104 +25,93 @@ interface UseAgentsApiReturn {
 }
 
 export const useAgentsApi = (initialParams: UseAgentsApiParams = {}): UseAgentsApiReturn => {
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(initialParams.enabled !== false); // Start with true if enabled
-  const [error, setError] = useState<string | null>(null);
   const [params, setParams] = useState<UseAgentsApiParams>(initialParams);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const hasInitialized = React.useRef(false);
 
-  // Sync params state with incoming props
-  useEffect(() => {
-    setParams(initialParams);
-  }, [
-    initialParams.organization_id,
-    initialParams.enabled,
-    initialParams.skip,
-    initialParams.limit,
-    initialParams.is_deleted,
-    initialParams.search,
-    initialParams.sort_by,
-    initialParams.sort_order,
-    initialParams.status,
-    initialParams.tags,
-  ]);
-
-  const fetchAgents = useCallback(async () => {
-    // Don't fetch if organization_id is not available
-    if (!params.organization_id) {
-      setLoading(false);
-      return;
+  const { agents, total } = useMemo(() => {
+    if (params.enabled === false) {
+      return { agents: [], total: 0 };
     }
 
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response: AssistantsApiResponse = await agentsApi.getAgents(params);
-      setAgents(response.assistants);
-      setTotal(response.total);
-      setIsInitialLoad(false);
-    } catch (err) {
-      console.error('Error fetching agents:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch agents');
-    } finally {
-      setLoading(false);
+    let filtered = [...mockAgents];
+
+    // Filter by is_deleted
+    if (params.is_deleted !== undefined) {
+      filtered = filtered.filter(a => a.is_deleted === params.is_deleted);
     }
+
+    // Filter by status
+    if (params.status) {
+      filtered = filtered.filter(a => a.status === params.status);
+    }
+
+    // Filter by search
+    if (params.search) {
+      const term = params.search.toLowerCase();
+      filtered = filtered.filter(
+        a =>
+          a.name.toLowerCase().includes(term) ||
+          a.description?.toLowerCase().includes(term) ||
+          a.category?.toLowerCase().includes(term)
+      );
+    }
+
+    // Filter by tags
+    if (params.tags && params.tags.length > 0) {
+      filtered = filtered.filter(a =>
+        params.tags!.some(tag => a.tags?.includes(tag))
+      );
+    }
+
+    // Sort
+    if (params.sort_by) {
+      const key = params.sort_by as keyof Agent;
+      const order = params.sort_order === 'desc' ? -1 : 1;
+      filtered = filtered.slice().sort((a, b) => {
+        const av = a[key];
+        const bv = b[key];
+        if (av == null && bv == null) return 0;
+        if (av == null) return 1;
+        if (bv == null) return -1;
+        if (av < bv) return -1 * order;
+        if (av > bv) return 1 * order;
+        return 0;
+      });
+    }
+
+    const total = filtered.length;
+
+    // Pagination
+    const skip = params.skip ?? 0;
+    const limit = params.limit ?? filtered.length;
+    const agents = filtered.slice(skip, skip + limit);
+
+    return { agents, total };
   }, [
-    params.skip,
-    params.limit,
-    params.organization_id,
+    params.enabled,
     params.is_deleted,
+    params.status,
     params.search,
+    params.tags,
     params.sort_by,
     params.sort_order,
-    params.status,
-    params.tags
+    params.skip,
+    params.limit,
   ]);
+
+  const refetch = useCallback(async () => {
+    // No-op: data is computed synchronously from mock data
+  }, []);
 
   const updateParams = useCallback((newParams: Partial<UseAgentsApiParams>) => {
-    // Set loading to true immediately when params change to prevent flash
-    // Only set loading if we're not in the initial load phase
-    setParams(prev => {
-      const hasChanged = Object.keys(newParams).some(key => prev[key as keyof UseAgentsApiParams] !== newParams[key as keyof UseAgentsApiParams]);
-      if (hasChanged && !isInitialLoad) {
-        setLoading(true);
-      }
-      return { ...prev, ...newParams };
-    });
-  }, [isInitialLoad]);
-
-  useEffect(() => {
-    if (params.enabled !== false) {
-      if (!hasInitialized.current) {
-        hasInitialized.current = true;
-      }
-      fetchAgents();
-    } else if (params.enabled === false) {
-      setLoading(false);
-    }
-  }, [
-    params.skip,
-    params.limit,
-    params.organization_id,
-    params.is_deleted,
-    params.search,
-    params.sort_by,
-    params.sort_order,
-    params.status,
-    params.tags,
-    params.enabled,
-    fetchAgents
-  ]);
+    setParams(prev => ({ ...prev, ...newParams }));
+  }, []);
 
   return {
     agents,
     total,
-    loading,
-    error,
-    refetch: fetchAgents,
+    loading: false,
+    error: null,
+    refetch,
     updateParams,
   };
 };

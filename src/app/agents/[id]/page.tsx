@@ -79,19 +79,19 @@ import {
   Globe
 } from 'lucide-react';
 
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   LineChart,
   Line,
   AreaChart,
   Area
-} from "@/components/ui/chart"
+} from "recharts"
 
 // Form sections components
 import { BasicInfoSection } from '../create/sections/basic-info-section';

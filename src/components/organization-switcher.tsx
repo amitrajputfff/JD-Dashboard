@@ -33,7 +33,7 @@ export function OrganizationSwitcher() {
             size="lg"
             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
           >
-            <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-6 items-center justify-center rounded-lg">
+            <div className="bg-primary/10 text-primary flex aspect-square size-6 items-center justify-center rounded-md">
               <Building2 className="size-3" />
             </div>
             <div className="grid flex-1 text-left text-xs leading-tight">
@@ -56,7 +56,7 @@ export function OrganizationSwitcher() {
           size="lg"
           className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
         >
-          <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-6 items-center justify-center rounded-lg">
+          <div className="bg-primary/10 text-primary flex aspect-square size-6 items-center justify-center rounded-md">
             <Building2 className="size-3" />
           </div>
           <div className="grid flex-1 text-left text-xs leading-tight">

@@ -1,12 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
-import { assistantsApi, Provider, LLMModel, STTModel, TTSModel, Voice, Language } from '@/lib/api/assistants';
+import { useState, useCallback } from 'react';
+import {
+  MOCK_LLM_PROVIDERS,
+  MOCK_STT_PROVIDERS,
+  MOCK_TTS_PROVIDERS,
+  MOCK_LLM_MODELS,
+  MOCK_STT_MODELS,
+  MOCK_TTS_MODELS,
+  MOCK_VOICES,
+  MOCK_LANGUAGES,
+} from '@/lib/mock-data/providers';
 import { AssistantSchema } from '@/types/assistant';
 import { z } from 'zod';
-
-// Utility function to convert falsy values to null
-const nullifyUndefined = <T>(value: T): T | null => {
-  return value || null;
-};
 
 export interface ModelOption {
   value: number;
@@ -34,233 +38,116 @@ export interface LanguageOption {
 
 // Hook for fetching providers
 export function useProviders(serviceType: 'llm' | 'stt' | 'tts') {
-  const [providers, setProviders] = useState<ProviderOption[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const providerMap = {
+    llm: MOCK_LLM_PROVIDERS,
+    stt: MOCK_STT_PROVIDERS,
+    tts: MOCK_TTS_PROVIDERS,
+  };
 
-  useEffect(() => {
-    const fetchProviders = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const response = await assistantsApi.getProviders(serviceType);
-        // Filter only active providers and map to options
-        const activeProviders = response.providers.filter(provider => provider.is_active === true);
-        const providerOptions = activeProviders.map(provider => ({
-          value: provider.id,
-          label: provider.display_name,
-          description: provider.description
-        }));
-        setProviders(providerOptions);
-      } catch (err) {
-        setError('Failed to fetch providers');
-        console.error('Error fetching providers:', err);
-        // Set default provider if API fails
-        setProviders([{ value: 0, label: `Default ${serviceType.toUpperCase()} Provider`, description: 'Default provider' }]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const providers: ProviderOption[] = (providerMap[serviceType] || [])
+    .filter(p => p.is_active)
+    .map(p => ({
+      value: p.id,
+      label: p.display_name,
+      description: p.description ?? undefined,
+    }));
 
-    fetchProviders();
-  }, [serviceType]);
-
-  return { providers, loading, error };
+  return { providers, loading: false, error: null };
 }
 
 // Hook for fetching LLM models
 export function useLLMModels(providerId: number) {
-  const [models, setModels] = useState<ModelOption[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!providerId || providerId === 0) {
-      setModels([{ value: 0, label: 'Default LLM Model', description: 'Default model' }]);
-      return;
-    }
-
-    const fetchModels = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const response = await assistantsApi.getLLMModels(providerId);
-        const modelOptions = response.models.map(model => ({
-          value: model.id,
-          label: model.display_name || model.model_name,
-          description: model.description
-        }));
-        setModels(modelOptions);
-      } catch (err) {
-        setError('Failed to fetch LLM models');
-        console.error('Error fetching LLM models:', err);
-        // Set default model if API fails
-        setModels([{ value: 0, label: 'Default LLM Model', description: 'Default model' }]);
-      } finally {
-        setLoading(false);
-      }
+  if (!providerId || providerId === 0) {
+    return {
+      models: [{ value: 0, label: 'Default LLM Model', description: 'Default model' }],
+      loading: false,
+      error: null,
     };
+  }
 
-    fetchModels();
-  }, [providerId]);
+  const models: ModelOption[] = MOCK_LLM_MODELS
+    .filter(m => m.provider_id === providerId)
+    .map(m => ({
+      value: m.id,
+      label: m.display_name || m.model_name,
+      description: undefined,
+    }));
 
-  return { models, loading, error };
+  return { models, loading: false, error: null };
 }
 
 // Hook for fetching STT models
 export function useSTTModels(providerId: number) {
-  const [models, setModels] = useState<ModelOption[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!providerId || providerId === 0) {
-      setModels([{ value: 0, label: 'Default STT Model', description: 'Default model' }]);
-      return;
-    }
-
-    const fetchModels = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const response = await assistantsApi.getSTTModels(providerId);
-        const modelOptions = response.models.map(model => ({
-          value: model.id,
-          label: model.display_name || model.model_name,
-          description: model.description
-        }));
-        setModels(modelOptions);
-      } catch (err) {
-        setError('Failed to fetch STT models');
-        console.error('Error fetching STT models:', err);
-        // Set default model if API fails
-        setModels([{ value: 0, label: 'Default STT Model', description: 'Default model' }]);
-      } finally {
-        setLoading(false);
-      }
+  if (!providerId || providerId === 0) {
+    return {
+      models: [{ value: 0, label: 'Default STT Model', description: 'Default model' }],
+      loading: false,
+      error: null,
     };
+  }
 
-    fetchModels();
-  }, [providerId]);
+  const models: ModelOption[] = MOCK_STT_MODELS
+    .filter(m => m.provider_id === providerId)
+    .map(m => ({
+      value: m.id,
+      label: m.display_name || m.model_name,
+      description: m.description ?? undefined,
+    }));
 
-  return { models, loading, error };
+  return { models, loading: false, error: null };
 }
 
 // Hook for fetching TTS models
 export function useTTSModels(providerId: number) {
-  const [models, setModels] = useState<ModelOption[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!providerId || providerId === 0) {
-      setModels([{ value: 0, label: 'Default TTS Model', description: 'Default model' }]);
-      return;
-    }
-
-    const fetchModels = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const response = await assistantsApi.getTTSModels(providerId);
-        const modelOptions = response.models.map(model => ({
-          value: model.id,
-          label: model.display_name || model.model_name,
-          description: model.description
-        }));
-        setModels(modelOptions);
-      } catch (err) {
-        setError('Failed to fetch TTS models');
-        console.error('Error fetching TTS models:', err);
-        // Set default model if API fails
-        setModels([{ value: 0, label: 'Default TTS Model', description: 'Default model' }]);
-      } finally {
-        setLoading(false);
-      }
+  if (!providerId || providerId === 0) {
+    return {
+      models: [{ value: 0, label: 'Default TTS Model', description: 'Default model' }],
+      loading: false,
+      error: null,
     };
+  }
 
-    fetchModels();
-  }, [providerId]);
+  const models: ModelOption[] = MOCK_TTS_MODELS
+    .filter(m => m.provider_id === providerId)
+    .map(m => ({
+      value: m.id,
+      label: m.display_name || m.model_name,
+      description: m.description ?? undefined,
+    }));
 
-  return { models, loading, error };
+  return { models, loading: false, error: null };
 }
 
 // Hook for fetching voices
 export function useVoices(ttsModelId: number) {
-  const [voices, setVoices] = useState<VoiceOption[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!ttsModelId || ttsModelId === 0) {
-      setVoices([{ value: 0, label: 'Default Voice', description: 'Default voice' }]);
-      return;
-    }
-
-    const fetchVoices = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await assistantsApi.getVoices(ttsModelId);
-        const voiceOptions = response.voices.map(voice => ({
-          value: voice.id,
-          label: voice.voice_name, // Use voice_name instead of name
-          description: voice.gender ? `${voice.gender} voice` : 'Voice'
-        }));
-        setVoices(voiceOptions);
-      } catch (err) {
-        setError('Failed to fetch voices');
-        console.error('Error fetching voices:', err);
-        setVoices([{ value: 0, label: 'Default Voice', description: 'Default voice' }]);
-      } finally {
-        setLoading(false);
-      }
+  if (!ttsModelId || ttsModelId === 0) {
+    return {
+      voices: [{ value: 0, label: 'Default Voice', description: 'Default voice' }],
+      loading: false,
+      error: null,
     };
+  }
 
-    fetchVoices();
-  }, [ttsModelId]);
+  const voices: VoiceOption[] = MOCK_VOICES
+    .filter(v => v.tts_model_id === ttsModelId)
+    .map(v => ({
+      value: v.id,
+      label: v.voice_name,
+      description: v.gender ? `${v.gender} voice` : 'Voice',
+    }));
 
-  return { voices, loading, error };
+  return { voices, loading: false, error: null };
 }
 
 // Hook for fetching languages
 export function useLanguages() {
-  const [languages, setLanguages] = useState<LanguageOption[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const languages: LanguageOption[] = MOCK_LANGUAGES.map(l => ({
+    value: l.id,
+    label: l.name,
+    code: l.code,
+  }));
 
-  useEffect(() => {
-    const fetchLanguages = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const response = await assistantsApi.getLanguages();
-        const languageOptions = response.languages.map(language => ({
-          value: language.id,
-          label: language.name,
-          code: language.code
-        }));
-        setLanguages(languageOptions);
-      } catch (err) {
-        setError('Failed to fetch languages');
-        console.error('Error fetching languages:', err);
-        // Set default language if API fails
-        setLanguages([{ value: 11, label: 'English', code: 'en' }]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLanguages();
-  }, []);
-
-  return { languages, loading, error };
+  return { languages, loading: false, error: null };
 }
 
 // Hook for creating assistant
@@ -273,72 +160,28 @@ export function useCreateAssistant() {
     setError(null);
 
     try {
-      // Get organization ID from current user
-      const organizationId = await assistantsApi.getOrganizationId();
-      if (!organizationId) {
-        const errorMessage = 'No organization mapped. Please contact your administrator.';
-        setError(errorMessage);
-        setIsLoading(false);
-        throw new Error(errorMessage);
-      }
-
-      const requestData = {
+      // Mock creation - return a simulated response
+      const mockResponse = {
+        id: Math.floor(Math.random() * 10000),
+        assistant_id: `asst-new-${Date.now()}`,
+        organization_id: 'org-demo-123',
         name: data.name,
         description: data.description,
-        organization_id: organizationId,
-        prompt: data.prompt,
-        llm_model_id: nullifyUndefined(data.llm_model_id),
-        stt_model_id: nullifyUndefined(data.stt_model_id),
-        tts_model_id: nullifyUndefined(data.tts_model_id),
-        voice_id: nullifyUndefined(data.voice_id),
-        language_id: data.language_id || 11, // Use form value instead of hardcoded
-        tags: data.tags || [],
-        category: data.category,
         status: data.status,
-        speech_speed: data.speech_speed,
-        pitch: data.pitch,
-        max_token: data.max_token,
-        temperature: data.temperature,
-        memory_enabled: data.memory_enabled ?? false,
-        max_memory_retrieval: data.max_memory_retrieval || 5,
-        call_recording: data.call_recording,
-        barge_in: data.barge_in,
-        voice_activity_detection: data.voice_activity_detection,
-        noise_suppression: data.noise_suppression,
-        function_calling: data.function_calling,
-        functions: data.functions && data.functions.length > 0 ? data.functions : null,
-        max_call_duration: data.max_call_duration,
-        silence_timeout: data.silence_timeout,
-        // Missing fields that were not being sent
-        cutoff_seconds: data.cutoff_seconds || 5,
-        ideal_time_seconds: data.ideal_time_seconds || 30,
-        initial_message: data.initial_message || 'Hello, I am a digital assistant. How can I help you today?',
-        call_end_text: data.call_end_text || 'Thank you for calling. Have a great day!',
-        filler_message: data.filler_message || [],
-        function_filler_message: data.function_filler_message || [],
-        is_transferable: data.is_transferable || false,
-        transfer_number: data.transfer_number || null,
-        interruption_level: data.interruption_level || 'Low',
-        // Knowledge base fields
-        knowledge_base_enabled: data.has_knowledge_base,
-        knowledge_documents: data.documents_ids ? data.documents_ids.map(String) : [],
-        knowledge_datasets: data.knowledge_datasets || [],
-        knowledge_similarity_threshold: data.knowledge_similarity_threshold,
-        knowledge_max_results: data.knowledge_max_results,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
-      const response = await assistantsApi.createAssistant(requestData);
-      
       return {
         success: true,
-        data: response
+        data: mockResponse,
       };
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to create assistant';
+    } catch (err: unknown) {
+      const errorMessage = (err instanceof Error ? err.message : null) || 'Failed to create assistant';
       setError(errorMessage);
       return {
         success: false,
-        error: errorMessage
+        error: errorMessage,
       };
     } finally {
       setIsLoading(false);
@@ -348,6 +191,6 @@ export function useCreateAssistant() {
   return {
     createAssistant,
     isLoading,
-    error
+    error,
   };
 }

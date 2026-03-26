@@ -404,19 +404,24 @@ export default function AgentsPage() {
           {/* Header with Filters */}
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight">AI Agents</h1>
-                <p className="text-sm text-muted-foreground">
-                  {showDrafts 
-                    ? "Draft Agents - Click to edit and configure"
-                    : "Manage your intelligent voice agents"
-                  }
-                  {showDrafts && (
-                    <span className="ml-2 px-2 py-1 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full">
-                      Draft mode
-                    </span>
-                  )}
-                </p>
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/10 text-primary rounded-lg p-2">
+                  <Bot className="h-5 w-5" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight">AI Agents</h1>
+                  <p className="text-sm text-muted-foreground">
+                    {showDrafts
+                      ? "Draft Agents - Click to edit and configure"
+                      : "Manage your intelligent voice agents"
+                    }
+                    {showDrafts && (
+                      <span className="ml-2 px-2 py-1 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full">
+                        Draft mode
+                      </span>
+                    )}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-2">
               <ExportDataDialog defaultExportType="assistants">
@@ -424,9 +429,9 @@ export default function AgentsPage() {
                     Export Data
                   </Button>
                 </ExportDataDialog>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => router.push('/agents/deleted')}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
@@ -438,89 +443,93 @@ export default function AgentsPage() {
                   )}
                 </Button>
                 <CreateAgentDialog>
-                  <Button size="sm" data-tutorial="create-agent-button-header">
-                    <Plus className="mr-2 h-4 w-4" />
+                  <Button size="sm" variant="default" data-tutorial="create-agent-button-header">
+                    <Bot className="mr-2 h-4 w-4" />
                     Create Agent
                   </Button>
                 </CreateAgentDialog>
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-1 items-center gap-3">
-                <div className="relative flex-1 max-w-sm">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search agents by name, description, or tags..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 h-9"
+            <div className="bg-muted/30 rounded-xl p-4 mb-6">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-1 items-center gap-3">
+                  <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Search agents by name, description, or tags..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 h-9"
+                    />
+                  </div>
+
+                  <Separator orientation="vertical" className="h-6" />
+
+                  <TagsFilter
+                    allTags={allTags}
+                    selectedTags={selectedTags}
+                    onTagToggle={handleTagToggle}
+                    onClearTags={() => setSelectedTags([])}
+                  />
+
+                  <SortControl
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                    onSortChange={(newSortBy, newSortOrder) => {
+                      setSortBy(newSortBy)
+                      setSortOrder(newSortOrder)
+                    }}
+                    options={[
+                      { value: "name", label: "Name" },
+                      { value: "lastUpdated", label: "Last Updated" },
+                      { value: "callsToday", label: "Calls Today" }
+                    ]}
                   />
                 </div>
-
-                <TagsFilter
-                  allTags={allTags}
-                  selectedTags={selectedTags}
-                  onTagToggle={handleTagToggle}
-                  onClearTags={() => setSelectedTags([])}
-                />
-
-                <SortControl
-                  sortBy={sortBy}
-                  sortOrder={sortOrder}
-                  onSortChange={(newSortBy, newSortOrder) => {
-                    setSortBy(newSortBy)
-                    setSortOrder(newSortOrder)
-                  }}
-                  options={[
-                    { value: "name", label: "Name" },
-                    { value: "lastUpdated", label: "Last Updated" },
-                    { value: "callsToday", label: "Calls Today" }
-                  ]}
-                />
-              </div>
-              <div className="flex items-center h-full gap-2">
-              <Button 
-                  variant={showDrafts ? "default" : "outline"} 
-                  size="sm"
-                  className="h-full" 
-                  onClick={() => setShowDrafts(!showDrafts)}
-                >
-                  Show Drafts Only
-                  {!showDrafts && (
-                    <span className="ml-2 px-1.5 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full">
-                      {draftCount}
-                    </span>
-                  )}
-                </Button>
-                <div className="flex items-center border rounded-md">
-                  <Toggle
-                    pressed={viewMode === "table"}
-                    onPressedChange={() => setViewMode("table")}
+                <div className="flex items-center h-full gap-2">
+                <Button
+                    variant={showDrafts ? "default" : "outline"}
                     size="sm"
-                    className="rounded-r-none h-9 w-9"
+                    className="h-full"
+                    onClick={() => setShowDrafts(!showDrafts)}
                   >
-                    <List className="h-4 w-4" />
-                  </Toggle>
-                  <Toggle
-                    pressed={viewMode === "cards"}
-                    onPressedChange={() => setViewMode("cards")}
-                    size="sm"
-                    className="rounded-l-none h-9 w-9"
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                  </Toggle>
-                </div>
-                {(searchQuery || selectedTags.length > 0 || showDrafts) && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={clearFilters}
-                    className="h-9"
-                  >
-                    Clear Filters
+                    Show Drafts Only
+                    {!showDrafts && (
+                      <span className="ml-2 px-1.5 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full">
+                        {draftCount}
+                      </span>
+                    )}
                   </Button>
-                )}
+                  <div className="flex items-center border rounded-md">
+                    <Toggle
+                      pressed={viewMode === "table"}
+                      onPressedChange={() => setViewMode("table")}
+                      size="sm"
+                      className="rounded-r-none h-9 w-9"
+                    >
+                      <List className="h-4 w-4" />
+                    </Toggle>
+                    <Toggle
+                      pressed={viewMode === "cards"}
+                      onPressedChange={() => setViewMode("cards")}
+                      size="sm"
+                      className="rounded-l-none h-9 w-9"
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </Toggle>
+                  </div>
+                  {(searchQuery || selectedTags.length > 0 || showDrafts) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearFilters}
+                      className="h-9"
+                    >
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

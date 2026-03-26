@@ -1,3 +1,6 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AssistantMetrics = any;
+
 export interface DashboardMetrics {
   totalAgents: number;
   activeAgents: number;

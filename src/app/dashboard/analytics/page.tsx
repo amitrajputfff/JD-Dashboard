@@ -5,12 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
   LineChart,
@@ -22,10 +22,12 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
+} from "recharts"
+import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartConfig
+  type ChartConfig,
 } from "@/components/ui/chart"
 import { 
   TrendingUp, 

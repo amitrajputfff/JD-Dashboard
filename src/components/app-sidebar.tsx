@@ -91,7 +91,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = React.useState(false)
 
   return (
-    <Sidebar variant="inset" {...props}>
+    <Sidebar variant="sidebar" {...props}>
       <SidebarHeader>
         <OrganizationSwitcher />
       </SidebarHeader>

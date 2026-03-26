@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { agentsApi } from '@/lib/api/agents';
 import { Agent } from '@/types/agent';
+import { mockAgents } from '@/lib/mock-data/agents';
 
 export interface UseAssistantsMappingOptions {
   organizationId: string;
@@ -17,7 +17,7 @@ export interface UseAssistantsMappingReturn {
 
 export function useAssistantsMapping(options: UseAssistantsMappingOptions): UseAssistantsMappingReturn {
   const { organizationId, enabled = true } = options;
-  
+
   const [assistants, setAssistants] = useState<Agent[]>([]);
   const [assistantsMap, setAssistantsMap] = useState<Map<string, Agent>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
@@ -34,18 +34,14 @@ export function useAssistantsMapping(options: UseAssistantsMappingOptions): UseA
     setError(null);
 
     try {
-      const response = await agentsApi.getAgents({
-        organization_id: organizationId,
-        skip: 0,
-        limit: 1000, // Get all assistants for mapping
-        is_deleted: false,
-      });
+      const filtered = mockAgents.filter(
+        (a) => a.organization_id === organizationId && !a.is_deleted
+      );
 
-      setAssistants(response.assistants);
-      
-      // Create a map for quick lookup by assistant_id
+      setAssistants(filtered);
+
       const map = new Map<string, Agent>();
-      response.assistants.forEach(assistant => {
+      filtered.forEach((assistant) => {
         if (assistant.assistant_id) {
           map.set(assistant.assistant_id, assistant);
         }
