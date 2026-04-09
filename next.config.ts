@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   output: 'standalone',
+  allowedDevOrigins: ['192.168.41.116'],
 };
 
 export default nextConfig;

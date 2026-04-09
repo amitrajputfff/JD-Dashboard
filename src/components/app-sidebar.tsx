@@ -6,7 +6,6 @@ import {
   BotIcon,
   PhoneIcon,
   HeadphonesIcon,
-  SettingsIcon,
   ShieldIcon,
   ActivityIcon,
   MicIcon,
@@ -48,11 +47,6 @@ const data = {
       title: "Phone Numbers",
       url: "/phone-numbers",
       icon: <HeadphonesIcon />,
-    },
-    {
-      title: "Providers",
-      url: "/providers",
-      icon: <SettingsIcon />,
     },
   ],
   navQuickLinks: [

@@ -1,5 +1,4 @@
 import React from 'react';
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { cn } from '@/lib/utils';
 
 interface LoaderProps {
@@ -10,28 +9,33 @@ interface LoaderProps {
 }
 
 const sizeMap = {
-  sm: 'w-8 h-8',
-  md: 'w-12 h-12',
-  lg: 'w-16 h-16',
-  xl: 'w-24 h-24',
+  sm: 'w-5 h-5',
+  md: 'w-8 h-8',
+  lg: 'w-12 h-12',
+  xl: 'w-16 h-16',
 };
 
-export function Loader({ 
-  size = 'md', 
+function SpinnerCircle({ size, className }: { size: keyof typeof sizeMap; className?: string }) {
+  return (
+    <div
+      className={cn(
+        sizeMap[size],
+        'rounded-full border-2 border-muted border-t-primary animate-spin',
+        className,
+      )}
+    />
+  );
+}
+
+export function Loader({
+  size = 'md',
   className,
   text = 'Loading...',
-  showText = true 
+  showText = true,
 }: LoaderProps) {
   return (
-    <div className={cn("flex flex-col items-center justify-center gap-2", className)}>
-      <div className={cn(sizeMap[size], "flex items-center justify-center mx-auto")}>
-        <DotLottieReact
-          src="https://lottie.host/8a67cfb0-46de-40f5-85bf-d7fe42510f84/Muil2xxstb.lottie"
-          loop
-          autoplay
-          style={{ width: '100%', height: '100%' }}
-        />
-      </div>
+    <div className={cn('flex flex-col items-center justify-center gap-2', className)}>
+      <SpinnerCircle size={size} />
       {showText && text && (
         <p className="text-sm text-muted-foreground text-center">{text}</p>
       )}
@@ -40,20 +44,11 @@ export function Loader({
 }
 
 // Compact inline loader for buttons and inline use
-export function InlineLoader({ 
+export function InlineLoader({
   size = 'sm',
-  className 
+  className,
 }: Omit<LoaderProps, 'text' | 'showText'>) {
-  return (
-    <div className={cn(sizeMap[size], "flex items-center justify-center flex-shrink-0", className)}>
-      <DotLottieReact
-        src="https://lottie.host/8a67cfb0-46de-40f5-85bf-d7fe42510f84/Muil2xxstb.lottie"
-        loop
-        autoplay
-        style={{ width: '100%', height: '100%' }}
-      />
-    </div>
-  );
+  return <SpinnerCircle size={size} className={cn('flex-shrink-0', className)} />;
 }
 
 // Full page loader

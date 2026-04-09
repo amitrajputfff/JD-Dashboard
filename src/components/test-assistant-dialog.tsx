@@ -4,7 +4,13 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react"
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
@@ -43,6 +49,30 @@ interface TestAssistantDialogProps {
     description: string
     status: "active" | "inactive"
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  functions?: any[]
+}
+
+interface FunctionQueryGroup {
+  functionName: string
+  params: { key: string; value: string }[]
+}
+
+// Collect all query params from configured functions, grouped by function
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function collectQueryParamGroups(functions: any[]): FunctionQueryGroup[] {
+  const groups: FunctionQueryGroup[] = []
+  for (const fn of functions) {
+    const params = fn.query_params
+    if (!params || typeof params !== "object") continue
+    const entries = Object.entries(params as Record<string, string>).filter(([k]) => k.trim() !== "")
+    if (entries.length === 0) continue
+    groups.push({
+      functionName: fn.name || fn.url || "Unnamed Function",
+      params: entries.map(([key, value]) => ({ key, value: value || "" })),
+    })
+  }
+  return groups
 }
 
 interface ConversationMessage {
@@ -73,6 +103,7 @@ export function TestAssistantDialog({
     description: "A helpful AI assistant that can answer customer questions and provide support",
     status: "active",
   },
+  functions = [],
 }: TestAssistantDialogProps) {
   // WebRTC connection state
   const webrtcRef = useRef<WebRTCConnection | null>(null)
@@ -90,6 +121,11 @@ export function TestAssistantDialog({
   const [transcript, setTranscript] = useState<ConversationMessage[]>([])
   const [cooldownRemaining, setCooldownRemaining] = useState(0)
   const [isInCooldown, setIsInCooldown] = useState(false)
+
+  const [showVarDialog, setShowVarDialog] = useState(false)
+  const [queryGroups, setQueryGroups] = useState<FunctionQueryGroup[]>([])
+  // flat map: "fnName||paramKey" -> value
+  const [queryValues, setQueryValues] = useState<Record<string, string>>({})
 
   const transcriptEndRef = useRef<HTMLDivElement>(null)
   const { resolvedTheme } = useTheme()
@@ -231,7 +267,8 @@ export function TestAssistantDialog({
     return `${mins}:${secs.toString().padStart(2, "0")}`
   }
 
-  const handleStartCall = async () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleStartCall = async (query_params?: Record<string, any>) => {
     if (isInCooldown) {
       setConnectionError(`Please wait ${cooldownRemaining} seconds before starting a new call`)
       return
@@ -244,11 +281,45 @@ export function TestAssistantDialog({
       setTranscript([])
       setLogs(["Ready to connect..."])
       setIsUserSpeaking(false)
-      await webrtcRef.current.startCall()
+      await webrtcRef.current.startCall(query_params)
     } catch (error) {
       setConnectionError(error instanceof Error ? error.message : "Failed to start call")
       setConnectionStatus("failed")
     }
+  }
+
+  const handleStartCallClick = () => {
+    const groups = collectQueryParamGroups(functions)
+    if (groups.length > 0) {
+      // Build flat map from existing config values, keep any previously edited values
+      const initial: Record<string, string> = {}
+      groups.forEach((g) => {
+        g.params.forEach(({ key, value }) => {
+          const flatKey = `${g.functionName}||${key}`
+          initial[flatKey] = queryValues[flatKey] ?? value
+        })
+      })
+      setQueryGroups(groups)
+      setQueryValues(initial)
+      setShowVarDialog(true)
+    } else {
+      handleStartCall()
+    }
+  }
+
+  const handleVarDialogSubmit = () => {
+    setShowVarDialog(false)
+    // Reshape flat map → { functionName: { key: value, ... }, ... }
+    const byFunction: Record<string, Record<string, string>> = {}
+    Object.entries(queryValues).forEach(([flatKey, val]) => {
+      const sep = flatKey.indexOf("||")
+      if (sep === -1) return
+      const fnName = flatKey.slice(0, sep)
+      const paramKey = flatKey.slice(sep + 2)
+      if (!byFunction[fnName]) byFunction[fnName] = {}
+      byFunction[fnName][paramKey] = val
+    })
+    handleStartCall(byFunction)
   }
 
   const handleEndCall = async () => {
@@ -295,6 +366,7 @@ export function TestAssistantDialog({
     .toUpperCase()
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="!max-w-[90vw] w-full p-0 sm:!max-w-[640px] lg:!max-w-[680px] max-h-[90vh] flex flex-col overflow-hidden gap-0">
 
@@ -562,7 +634,7 @@ export function TestAssistantDialog({
               </button>
             ) : (
               <button
-                onClick={handleStartCall}
+                onClick={handleStartCallClick}
                 disabled={isInCooldown || connectionStatus === "connecting"}
                 className={cn(
                   "h-10 px-4 rounded-full flex items-center gap-2 border transition-colors",
@@ -597,5 +669,55 @@ export function TestAssistantDialog({
 
       </DialogContent>
     </Dialog>
+
+    {/* Query param input popup — shown before starting a call when functions have query params */}
+    <Dialog open={showVarDialog} onOpenChange={setShowVarDialog}>
+      <DialogContent className="sm:max-w-[460px] max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>API Query Parameters</DialogTitle>
+          <DialogDescription>
+            Review or override query parameter values for this test call.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-1 overflow-y-auto space-y-5 py-2 pr-1">
+          {queryGroups.map((group) => (
+            <div key={group.functionName} className="space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide truncate">
+                {group.functionName}
+              </p>
+              {group.params.map(({ key }) => {
+                const flatKey = `${group.functionName}||${key}`
+                return (
+                  <div key={flatKey} className="flex items-center gap-3">
+                    <Label htmlFor={flatKey} className="w-32 shrink-0 text-sm truncate" title={key}>
+                      {key}
+                    </Label>
+                    <Input
+                      id={flatKey}
+                      placeholder={`Value for ${key}`}
+                      value={queryValues[flatKey] ?? ""}
+                      onChange={(e) =>
+                        setQueryValues((prev) => ({ ...prev, [flatKey]: e.target.value }))
+                      }
+                      className="text-sm h-9"
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          ))}
+        </div>
+        <DialogFooter className="gap-2 sm:gap-0 pt-3 border-t">
+          <Button variant="outline" size="sm" onClick={() => { setShowVarDialog(false); handleStartCall() }}>
+            Skip
+          </Button>
+          <Button size="sm" onClick={handleVarDialogSubmit}>
+            <Phone className="h-3.5 w-3.5 mr-1.5" />
+            Start Call
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </>
   )
 }

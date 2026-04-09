@@ -69,9 +69,7 @@ import {
   Trash2,
   Activity,
   User,
-  Bot,
-  Volume2,
-  Mic,
+  FileText,
   Settings,
   RotateCcw,
   Play,
@@ -96,8 +94,6 @@ import {
 // Form sections components
 import { BasicInfoSection } from '../create/sections/basic-info-section';
 import LLMConfigSection from '@/components/agents/llm-config-section';
-import TTSConfigSection from '@/components/agents/tts-config-section';
-import STTConfigSection from '@/components/agents/stt-config-section';
 import AdvancedSettingsSection from '../create/sections/advanced-settings-section';
 
 // Enhanced metrics component with real API integration
@@ -1062,8 +1058,6 @@ export default function AgentDetailsPage() {
     const sectionErrors: Record<string, boolean> = {
       'basic-info': false,
       'llm-config': false,
-      'tts-config': false,
-      'stt-config': false,
       'advanced-settings': false,
     };
 
@@ -1071,50 +1065,17 @@ export default function AgentDetailsPage() {
       return sectionErrors;
     }
 
-    // Map form fields to their respective sections
     const fieldToSection: Record<string, string> = {
-      // Basic Info fields
       'name': 'basic-info',
       'description': 'basic-info',
       'category': 'basic-info',
       'tags': 'basic-info',
-      
-      // LLM Config fields
-      'llm_provider_id': 'llm-config',
-      'llm_model_id': 'llm-config',
       'prompt': 'llm-config',
-      'temperature': 'llm-config',
-      'max_token': 'llm-config',
-      
-      // TTS Config fields
-      'tts_provider_id': 'tts-config',
-      'tts_model_id': 'tts-config',
-      'voice_id': 'tts-config',
-      'speech_speed': 'tts-config',
-      'pitch': 'tts-config',
-      
-      // STT Config fields
-      'stt_provider_id': 'stt-config',
-      'stt_model_id': 'stt-config',
-      'language_id': 'stt-config',
-      
-      // Advanced Settings fields
-      'call_recording': 'advanced-settings',
-      'voice_activity_detection': 'advanced-settings',
-      'barge_in': 'advanced-settings',
-      'noise_suppression': 'advanced-settings',
       'function_calling': 'advanced-settings',
       'functions': 'advanced-settings',
       'max_call_duration': 'advanced-settings',
-      'silence_timeout': 'advanced-settings',
-      'knowledge_base_enabled': 'advanced-settings',
-      'knowledge_documents': 'advanced-settings',
-      'knowledge_datasets': 'advanced-settings',
-      'knowledge_similarity_threshold': 'advanced-settings',
-      'knowledge_max_results': 'advanced-settings',
     };
 
-    // Check which sections have errors
     Object.keys(errors).forEach(field => {
       const section = fieldToSection[field];
       if (section) {
@@ -1489,9 +1450,7 @@ export default function AgentDetailsPage() {
                   {[
                     { title: "Metrics", value: "metrics", icon: Activity },
                     { title: "Basic Info", value: "basic-info", icon: User },
-                    { title: "LLM Config", value: "llm-config", icon: Bot },
-                    { title: "Text-to-Speech", value: "tts-config", icon: Volume2 },
-                    { title: "Speech-to-Text", value: "stt-config", icon: Mic },
+                    { title: "Prompt", value: "llm-config", icon: FileText },
                     { title: "Advanced", value: "advanced-settings", icon: Settings },
                     { title: "Widget", value: "widget", icon: Globe },
                   ].map((tab) => {
@@ -1547,77 +1506,18 @@ export default function AgentDetailsPage() {
                   )}
 
                   {activeTab === 'llm-config' && (
-                    <Card className={getSectionErrors()['llm-config'] ? 'border-red-200 bg-red-50/30' : ''}>
+                    <Card>
                       <CardHeader>
-                        <CardTitle className={getSectionErrors()['llm-config'] ? 'text-red-700' : ''}>
-                          LLM Configuration
-                          {getSectionErrors()['llm-config'] && (
-                            <span className="ml-2 text-sm font-normal text-red-600">(Has errors)</span>
-                          )}
-                        </CardTitle>
+                        <CardTitle>Prompt Configuration</CardTitle>
                         <CardDescription>
-                          Language model settings and behavior
+                          System prompt and agent instructions
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-6">
-                        <LLMConfigSection 
-                          control={control} 
-                          setValue={setValue} 
-                          watch={watch} 
-                          mode="edit"
-                          showHeader={false}
-                          errors={errors}
-                          trainingStatus={agent.training_status as 'pending' | 'ready' | 'training' | 'failed'}
-                          ragProcessingStatus={agent.rag_processing_status as 'processing' | 'completed' | 'failed'}
-                        />
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {activeTab === 'tts-config' && (
-                    <Card className={getSectionErrors()['tts-config'] ? 'border-red-200 bg-red-50/30' : ''}>
-                      <CardHeader>
-                        <CardTitle className={getSectionErrors()['tts-config'] ? 'text-red-700' : ''}>
-                          Text-to-Speech
-                          {getSectionErrors()['tts-config'] && (
-                            <span className="ml-2 text-sm font-normal text-red-600">(Has errors)</span>
-                          )}
-                        </CardTitle>
-                        <CardDescription>
-                          Voice synthesis and speech settings
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                        <TTSConfigSection 
-                          control={control} 
-                          setValue={setValue} 
-                          watch={watch} 
-                          mode="edit"
-                          showHeader={false}
-                          errors={errors}
-                        />
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {activeTab === 'stt-config' && (
-                    <Card className={getSectionErrors()['stt-config'] ? 'border-red-200 bg-red-50/30' : ''}>
-                      <CardHeader>
-                        <CardTitle className={getSectionErrors()['stt-config'] ? 'text-red-700' : ''}>
-                          Speech-to-Text
-                          {getSectionErrors()['stt-config'] && (
-                            <span className="ml-2 text-sm font-normal text-red-600">(Has errors)</span>
-                          )}
-                        </CardTitle>
-                        <CardDescription>
-                          Speech recognition and language settings
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                        <STTConfigSection 
-                          control={control} 
-                          setValue={setValue} 
-                          watch={watch} 
+                        <LLMConfigSection
+                          control={control}
+                          setValue={setValue}
+                          watch={watch}
                           mode="edit"
                           showHeader={false}
                           errors={errors}
@@ -1861,6 +1761,7 @@ export default function AgentDetailsPage() {
           open={showTestDialog}
           onOpenChange={setShowTestDialog}
           assistant={agent}
+          functions={agent.functions}
         />
       )}
 

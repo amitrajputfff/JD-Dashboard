@@ -677,7 +677,7 @@ export default function AgentsPage() {
           )}
         </div>
           {/* Test Assistant Dialog */}
-          <TestAssistantDialog 
+          <TestAssistantDialog
             open={showTestDialog}
             onOpenChange={setShowTestDialog}
             assistant={selectedAgentForTest ? {
@@ -686,6 +686,7 @@ export default function AgentsPage() {
               description: selectedAgentForTest.description || "No description available",
               status: selectedAgentForTest.status as "active" | "inactive"
             } : undefined}
+            functions={selectedAgentForTest?.functions}
           />
 
           {/* Delete Confirmation Dialog */}

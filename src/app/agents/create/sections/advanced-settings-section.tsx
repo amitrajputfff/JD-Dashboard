@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { TextareaWithSuggestions } from '@/components/ui/textarea-with-suggestions';
@@ -9,7 +9,6 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PhoneInput } from '@/components/ui/phone-input';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -17,7 +16,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { ChevronDown, Code, Zap, Shield, Phone, Plus, Minus, Trash2, Copy, Clock, MessageSquare, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { ChevronDown, Code, Zap, Shield, Plus, Minus, Trash2, Copy, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { InlineLoader } from '@/components/ui/loader';
 import { FormSectionProps, FunctionConfig, FunctionValidationResponse } from '@/types/assistant';
 import { functionValidationApi } from '@/lib/api/function-validation';
@@ -33,10 +32,6 @@ export default function AdvancedSettingsSection({ control, watch, setValue }: Fo
   }>>({});
   
   const watchedFunctionCalling = watch('function_calling') || false;
-  const watchedMaxCallDuration = watch('max_call_duration') || 1800;
-  const watchedSilenceTimeout = watch('silence_timeout') || 15;
-  const watchedCutoffSeconds = watch('cutoff_seconds') || 5;
-  const watchedIdealTimeSeconds = watch('ideal_time_seconds') || 30;
   const watchedFunctions = watch('functions') || [];
 
   // Function management helpers
@@ -215,411 +210,120 @@ export default function AdvancedSettingsSection({ control, watch, setValue }: Fo
 
   return (
     <div className="space-y-6">
-      
-      {/* Call Settings */}
+
+      {/* Gemini VAD Settings */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <Phone className="h-4 w-4 text-zinc-600" />
-          <h4 className="text-sm font-medium text-zinc-900">Call Settings</h4>
+          <Zap className="h-4 w-4 text-zinc-600" />
+          <h4 className="text-sm font-medium text-zinc-900">Voice Sensitivity Settings</h4>
         </div>
-        
+        <p className="text-xs text-muted-foreground -mt-2">
+          Controls how Gemini Live detects the start and end of speech.
+        </p>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          {/* Call Transfer */}
+          {/* Start Sensitivity */}
           <FormField
             control={control}
-            name="is_transferable"
+            name="gemini_start_sensitivity"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-sm font-medium">Call Transfer</FormLabel>
-                  <FormDescription>
-                    Allow calls to be transferred to another number
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
+              <FormItem>
+                <FormLabel className="text-sm font-medium">Start Sensitivity</FormLabel>
+                <Select value={field.value || 'START_SENSITIVITY_LOW'} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select sensitivity" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="START_SENSITIVITY_LOW">Low — less likely to trigger on noise</SelectItem>
+                    <SelectItem value="START_SENSITIVITY_MEDIUM">Medium</SelectItem>
+                    <SelectItem value="START_SENSITIVITY_HIGH">High — triggers more easily</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>How sensitive the VAD is to detecting the start of speech.</FormDescription>
+                <FormMessage />
               </FormItem>
             )}
           />
 
-        </div>
-
-        {/* Transfer Number (only show if call transfer is enabled) */}
-        {watch('is_transferable') && (
-          <div className="space-y-4">
-            <FormField
-              control={control}
-              name="transfer_number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium">Transfer Number</FormLabel>
+          {/* End Sensitivity */}
+          <FormField
+            control={control}
+            name="gemini_end_sensitivity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium">End Sensitivity</FormLabel>
+                <Select value={field.value || 'END_SENSITIVITY_HIGH'} onValueChange={field.onChange}>
                   <FormControl>
-                    <PhoneInput
-                      placeholder="e.g., 5551234567"
-                      value={field.value || ""}
-                      onChange={field.onChange}
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select sensitivity" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="END_SENSITIVITY_LOW">Low — waits longer before cutting off</SelectItem>
+                    <SelectItem value="END_SENSITIVITY_MEDIUM">Medium</SelectItem>
+                    <SelectItem value="END_SENSITIVITY_HIGH">High — cuts off quickly after speech ends</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>How quickly the VAD detects the end of speech.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Silence Duration */}
+          <FormField
+            control={control}
+            name="gemini_silence_duration_ms"
+            render={({ field }) => {
+              const val = typeof field.value === 'number' ? field.value : 800;
+              return (
+                <FormItem>
+                  <div className="flex items-center justify-between">
+                    <FormLabel className="text-sm font-medium">Silence Duration</FormLabel>
+                    <span className="text-sm text-zinc-600">{val} ms</span>
+                  </div>
+                  <FormControl>
+                    <Slider
+                      min={200}
+                      max={3000}
+                      step={100}
+                      value={[val]}
+                      onValueChange={(v) => field.onChange(v[0])}
+                      className="w-full"
                     />
                   </FormControl>
-                  <FormDescription>
-                    Phone number to transfer calls to (with country code)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        )}
-
-        {/* Call Timing Settings */}
-        <div className="space-y-4">
-          <h4 className="text-sm font-medium text-zinc-900 flex items-center gap-2">
-            <Clock className="h-4 w-4 text-zinc-600" />
-            Call Timing & Response Settings
-          </h4>
-          
-          {/* First Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Max Call Duration */}
-            <FormField
-              control={control}
-              name="max_call_duration"
-              render={({ field }) => {
-                // Ensure max_call_duration has a valid numeric value
-                const maxCallDurationValue = typeof field.value === 'number' && !isNaN(field.value) 
-                  ? field.value 
-                  : 1800; // Default 30 minutes
-                
-                return (
-                  <FormItem>
-                    <div className="flex items-center justify-between">
-                      <FormLabel className="text-sm font-medium">Maximum Call Duration</FormLabel>
-                      <span className="text-sm text-zinc-600">{Math.round(maxCallDurationValue / 60)} min</span>
-                    </div>
-                    <FormControl>
-                      <Slider
-                        min={60}
-                        max={3600}
-                        step={60}
-                        value={[maxCallDurationValue]}
-                        onValueChange={(value) => field.onChange(value[0])}
-                        className="w-full"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      How long calls can last before auto-disconnection
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
-
-            {/* Filler Message Time (ideal_time_seconds) */}
-            <FormField
-              control={control}
-              name="ideal_time_seconds"
-              render={({ field }) => {
-                // Ensure ideal_time_seconds has a valid numeric value
-                const idealTimeValue = typeof field.value === 'number' && !isNaN(field.value) 
-                  ? field.value 
-                  : 3; // Default 3 seconds
-                
-                return (
-                  <FormItem>
-                    <div className="flex items-center justify-between">
-                      <FormLabel className="text-sm font-medium">Filler Message Time</FormLabel>
-                      <span className="text-sm text-zinc-600">{idealTimeValue}s</span>
-                    </div>
-                    <FormControl>
-                      <Slider
-                        min={1}
-                        max={10}
-                        step={1}
-                        value={[idealTimeValue]}
-                        onValueChange={(value) => field.onChange(value[0])}
-                        className="w-full"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      When to use filler messages during processing delays
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
-
-          </div>
-
-          {/* Second Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            {/* Silence Timeout */}
-            <FormField
-              control={control}
-              name="silence_timeout"
-              render={({ field }) => {
-                // Ensure silence_timeout has a valid numeric value
-                const silenceTimeoutValue = typeof field.value === 'number' && !isNaN(field.value) 
-                  ? field.value 
-                  : 10; // Default 10 seconds
-                
-                return (
-                  <FormItem>
-                    <div className="flex items-center justify-between">
-                      <FormLabel className="text-sm font-medium">Silence Detection</FormLabel>
-                      <span className="text-sm text-zinc-600">{silenceTimeoutValue}s</span>
-                    </div>
-                    <FormControl>
-                      <Slider
-                        min={1}
-                        max={60}
-                        step={1}
-                        value={[silenceTimeoutValue]}
-                        onValueChange={(value) => field.onChange(value[0])}
-                        className="w-full"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Seconds of silence before ending the call
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
-
-            {/* Cutoff Seconds */}
-            <FormField
-              control={control}
-              name="cutoff_seconds"
-              render={({ field }) => {
-                // Ensure cutoff_seconds has a valid numeric value
-                const cutoffSecondsValue = typeof field.value === 'number' && !isNaN(field.value) 
-                  ? field.value 
-                  : 2; // Default 2 seconds
-                
-                return (
-                  <FormItem>
-                    <div className="flex items-center justify-between">
-                      <FormLabel className="text-sm font-medium">Speech Interruption</FormLabel>
-                      <span className="text-sm text-zinc-600">{cutoffSecondsValue}s</span>
-                    </div>
-                    <FormControl>
-                      <Slider
-                        min={1}
-                        max={10}
-                        step={1}
-                        value={[cutoffSecondsValue]}
-                        onValueChange={(value) => field.onChange(value[0])}
-                        className="w-full"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Response time before allowing user interruption
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
-
-          </div>
-        </div>
-      </div>
-
-      {/* Filler Messages */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 mb-4">
-          <MessageSquare className="h-4 w-4 text-zinc-600" />
-          <h4 className="text-sm font-medium text-zinc-900">Response Messages</h4>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-          {/* Regular Filler Messages */}
-          <FormField
-            control={control}
-            name="filler_message"
-            render={({ field }) => {
-              const fillerMessages = field.value || [];
-              
-              const addFillerMessage = () => {
-                const newMessages = [...fillerMessages, ''];
-                field.onChange(newMessages);
-              };
-              
-              const removeFillerMessage = (index: number) => {
-                const newMessages = fillerMessages.filter((_: string, i: number) => i !== index);
-                field.onChange(newMessages);
-              };
-              
-              const updateFillerMessage = (index: number, value: string) => {
-                const newMessages = [...fillerMessages];
-                newMessages[index] = value;
-                field.onChange(newMessages);
-              };
-              
-              return (
-                <FormItem className="h-full flex flex-col min-h-[200px]">
-                  <div className="flex items-center justify-between mb-3">
-                    <FormLabel className="text-sm font-medium">General Filler Messages</FormLabel>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={addFillerMessage}
-                      className="h-7 text-xs"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Add
-                    </Button>
-                  </div>
-                  <FormControl>
-                    <div className="space-y-2 max-h-64 overflow-y-auto flex-1 min-h-[120px]">
-                      {fillerMessages.length === 0 ? (
-                        <div className="text-center py-4 border-2 border-dashed border-gray-200 rounded-lg">
-                          <p className="text-xs text-muted-foreground mb-2">No messages added</p>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={addFillerMessage}
-                            className="h-7 text-xs"
-                          >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Add First
-                          </Button>
-                        </div>
-                      ) : (
-                        fillerMessages.map((message: string, index: number) => (
-                          <div key={index} className="flex gap-2 items-start">
-                            <div className="flex-1">
-                              <Input 
-                                placeholder="Enter a brief message..."
-                                value={message}
-                                onChange={(e) => updateFillerMessage(index, e.target.value)}
-                                maxLength={100}
-                                className="text-sm"
-                              />
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {message.length}/100
-                              </div>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeFillerMessage(index)}
-                              className="h-7 w-7 p-0 flex-shrink-0 mt-1"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </FormControl>
-                  <FormDescription className="text-xs mt-2">
-                    Messages used during processing delays
-                  </FormDescription>
+                  <FormDescription>Milliseconds of silence before the utterance is considered complete.</FormDescription>
                   <FormMessage />
                 </FormItem>
               );
             }}
           />
 
-          {/* Function Filler Messages */}
+          {/* Prefix Padding */}
           <FormField
             control={control}
-            name="function_filler_message"
+            name="gemini_prefix_padding_ms"
             render={({ field }) => {
-              const functionFillerMessages = field.value || [];
-              
-              const addFunctionFillerMessage = () => {
-                const newMessages = [...functionFillerMessages, ''];
-                field.onChange(newMessages);
-              };
-              
-              const removeFunctionFillerMessage = (index: number) => {
-                const newMessages = functionFillerMessages.filter((_: string, i: number) => i !== index);
-                field.onChange(newMessages);
-              };
-              
-              const updateFunctionFillerMessage = (index: number, value: string) => {
-                const newMessages = [...functionFillerMessages];
-                newMessages[index] = value;
-                field.onChange(newMessages);
-              };
-              
+              const val = typeof field.value === 'number' ? field.value : 100;
               return (
-                <FormItem className="h-full flex flex-col min-h-[200px]">
-                  <div className="flex items-center justify-between mb-3">
-                    <FormLabel className="text-sm font-medium">Function Filler Messages</FormLabel>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={addFunctionFillerMessage}
-                      className="h-7 text-xs"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Add
-                    </Button>
+                <FormItem>
+                  <div className="flex items-center justify-between">
+                    <FormLabel className="text-sm font-medium">Prefix Padding</FormLabel>
+                    <span className="text-sm text-zinc-600">{val} ms</span>
                   </div>
                   <FormControl>
-                    <div className="space-y-2 max-h-64 overflow-y-auto flex-1 min-h-[120px]">
-                      {functionFillerMessages.length === 0 ? (
-                        <div className="text-center py-4 border-2 border-dashed border-gray-200 rounded-lg">
-                          <p className="text-xs text-muted-foreground mb-2">No messages added</p>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={addFunctionFillerMessage}
-                            className="h-7 text-xs"
-                          >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Add First
-                          </Button>
-                        </div>
-                      ) : (
-                        functionFillerMessages.map((message: string, index: number) => (
-                          <div key={index} className="flex gap-2 items-start">
-                            <div className="flex-1">
-                              <Input 
-                                placeholder="Enter a function processing message..."
-                                value={message}
-                                onChange={(e) => updateFunctionFillerMessage(index, e.target.value)}
-                                maxLength={100}
-                                className="text-sm"
-                              />
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {message.length}/100
-                              </div>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeFunctionFillerMessage(index)}
-                              className="h-7 w-7 p-0 flex-shrink-0 mt-1"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))
-                      )}
-                    </div>
+                    <Slider
+                      min={0}
+                      max={500}
+                      step={50}
+                      value={[val]}
+                      onValueChange={(v) => field.onChange(v[0])}
+                      className="w-full"
+                    />
                   </FormControl>
-                  <FormDescription className="text-xs mt-2">
-                    Messages used during function calls and API processing
-                  </FormDescription>
+                  <FormDescription>Audio buffer captured before speech starts (keeps the first syllable intact).</FormDescription>
                   <FormMessage />
                 </FormItem>
               );
@@ -627,6 +331,7 @@ export default function AdvancedSettingsSection({ control, watch, setValue }: Fo
           />
         </div>
       </div>
+
 
       {/* Function Calling */}
       <div className="space-y-4">

@@ -39,9 +39,7 @@ import {
 import {
   ArrowLeft,
   User,
-  Brain,
-  Volume2,
-  Mic,
+  FileText,
   Settings,
   CheckCircle2,
   Circle,
@@ -55,43 +53,27 @@ import {
 
 import { BasicInfoSection } from './sections/basic-info-section';
 import LLMConfigSection from '@/components/agents/llm-config-section';
-import TTSConfigSection from '@/components/agents/tts-config-section';
-import STTConfigSection from '@/components/agents/stt-config-section';
 import AdvancedSettingsSection from './sections/advanced-settings-section';
 
 const STEPS = [
   {
     id: 'basic-info',
     title: 'Basic Info',
-    description: 'Name, purpose & personality',
+    description: 'Name, purpose & opening/closing lines',
     icon: User,
     requiredFields: ['name', 'description'],
   },
   {
     id: 'llm-config',
-    title: 'Brain',
-    description: 'Language model & prompts',
-    icon: Brain,
-    requiredFields: ['llm_provider_id', 'llm_model_id'],
-  },
-  {
-    id: 'tts-config',
-    title: 'Voice',
-    description: 'Text-to-speech & tone',
-    icon: Volume2,
-    requiredFields: ['tts_provider_id', 'voice_id'],
-  },
-  {
-    id: 'stt-config',
-    title: 'Listening',
-    description: 'Speech recognition',
-    icon: Mic,
-    requiredFields: ['stt_provider_id', 'stt_model_id'],
+    title: 'Prompt',
+    description: 'System prompt & agent instructions',
+    icon: FileText,
+    requiredFields: [],
   },
   {
     id: 'advanced-settings',
     title: 'Advanced',
-    description: 'Functions & call settings',
+    description: 'API functions & call settings',
     icon: Settings,
     requiredFields: [],
   },
@@ -350,10 +332,6 @@ function CreateAssistantPageContent() {
 
   const watchedName = watch('name');
   const watchedInitialMessage = watch('initial_message');
-  const watchedLLMProviderId = watch('llm_provider_id');
-  const watchedTTSProviderId = watch('tts_provider_id');
-  const watchedTTSModelId = watch('tts_model_id');
-  const watchedSTTProviderId = watch('stt_provider_id');
 
   // Step completion based on filled required fields
   const getStepCompletion = useCallback(() => {
@@ -425,11 +403,7 @@ function CreateAssistantPageContent() {
 
   const validateRequiredFields = (data: any) => {
     const missing = [];
-    if (!data.llm_model_id) missing.push('LLM Model');
-    if (!data.language_id) missing.push('Language');
-    if (!data.stt_model_id) missing.push('STT Model');
-    if (!data.tts_model_id) missing.push('TTS Model');
-    if (!data.voice_id) missing.push('Voice');
+    if (!data.prompt || data.prompt.trim().length < 10) missing.push('System Prompt');
     return missing;
   };
 
@@ -532,9 +506,7 @@ function CreateAssistantPageContent() {
   const hasSectionError = (stepId: string) => {
     const fieldMap: Record<string, string[]> = {
       'basic-info': ['name', 'description'],
-      'llm-config': ['llm_provider_id', 'llm_model_id', 'prompt', 'temperature'],
-      'tts-config': ['tts_provider_id', 'tts_model_id', 'voice_id'],
-      'stt-config': ['stt_provider_id', 'stt_model_id', 'language_id'],
+      'llm-config': ['prompt'],
       'advanced-settings': ['functions', 'max_call_duration'],
     };
     return (fieldMap[stepId] || []).some((f) => !!errors[f]);
@@ -753,12 +725,6 @@ function CreateAssistantPageContent() {
 
               {/* ── Config panel ── */}
               <main className="flex-1 overflow-y-auto">
-                <CreateAgentProvider
-                  llmProviderId={watchedLLMProviderId}
-                  ttsProviderId={watchedTTSProviderId}
-                  ttsModelId={watchedTTSModelId}
-                  sttProviderId={watchedSTTProviderId}
-                >
                   <Form {...form}>
                     <form id="assistant-form" onSubmit={handleSubmit(onSubmit)}>
                       <div className="p-8">
@@ -784,26 +750,6 @@ function CreateAssistantPageContent() {
                         )}
                         {activeTab === 'llm-config' && (
                           <LLMConfigSection
-                            control={control}
-                            watch={watch}
-                            setValue={setValue}
-                            mode="create"
-                            showHeader={false}
-                            errors={errors}
-                          />
-                        )}
-                        {activeTab === 'tts-config' && (
-                          <TTSConfigSection
-                            control={control}
-                            watch={watch}
-                            setValue={setValue}
-                            mode="create"
-                            showHeader={false}
-                            errors={errors}
-                          />
-                        )}
-                        {activeTab === 'stt-config' && (
-                          <STTConfigSection
                             control={control}
                             watch={watch}
                             setValue={setValue}
@@ -856,7 +802,6 @@ function CreateAssistantPageContent() {
                       </div>
                     </form>
                   </Form>
-                </CreateAgentProvider>
               </main>
 
             </div>

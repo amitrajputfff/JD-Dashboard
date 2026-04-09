@@ -51,6 +51,12 @@ export const AssistantSchema = z.object({
   ideal_time_seconds: z.number().min(1).max(300).optional().default(30),
   is_transferable: z.boolean().optional().default(false),
   transfer_number: z.string().optional().default(''),
+
+  // Gemini VAD (Voice Activity Detection) Settings
+  gemini_start_sensitivity: z.enum(['START_SENSITIVITY_LOW', 'START_SENSITIVITY_MEDIUM', 'START_SENSITIVITY_HIGH']).optional().default('START_SENSITIVITY_LOW'),
+  gemini_end_sensitivity: z.enum(['END_SENSITIVITY_LOW', 'END_SENSITIVITY_MEDIUM', 'END_SENSITIVITY_HIGH']).optional().default('END_SENSITIVITY_HIGH'),
+  gemini_silence_duration_ms: z.number().min(200).max(3000).optional().default(800),
+  gemini_prefix_padding_ms: z.number().min(0).max(500).optional().default(100),
   
   // 7) Call Messages
   initial_message: z.string().optional().default('Hello, I am a digital assistant. How can I help you today?'),

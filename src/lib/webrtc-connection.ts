@@ -99,7 +99,8 @@ export class WebRTCConnection {
   /**
    * Start the WebRTC connection
    */
-  async startCall(): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async startCall(query_params?: Record<string, any>): Promise<void> {
     try {
       this.log('Starting WebRTC connection...');
 
@@ -252,7 +253,8 @@ export class WebRTCConnection {
         body: JSON.stringify({
           sdp: offer.sdp,
           type: offer.type,
-          assistant_id: this.config.assistantId || undefined
+          assistant_id: this.config.assistantId || undefined,
+          ...(query_params && Object.keys(query_params).length > 0 ? { query_params } : {}),
         })
       });
 
