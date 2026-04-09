@@ -58,7 +58,6 @@ interface FunctionQueryGroup {
   params: { key: string; value: string }[]
 }
 
-// Collect all query params from configured functions, grouped by function
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function collectQueryParamGroups(functions: any[]): FunctionQueryGroup[] {
   const groups: FunctionQueryGroup[] = []
@@ -82,18 +81,116 @@ interface ConversationMessage {
   timestamp: Date
 }
 
-// Derive an AgentState from WebRTC connection status for the visualizer
-function toAgentState(
+// -----------------------------------------------------------------
+// State derivation — four real states + connecting/disconnected
+// -----------------------------------------------------------------
+type CallPhase = "connecting" | "listening" | "thinking" | "speaking" | "idle"
+
+function deriveCallPhase(
   connectionStatus: "disconnected" | "connecting" | "connected" | "failed",
   isCallActive: boolean,
   isUserSpeaking: boolean,
-): AgentState {
+  isBotSpeaking: boolean,
+): CallPhase {
   if (connectionStatus === "connecting") return "connecting"
-  if (!isCallActive) return "disconnected" as AgentState
+  if (!isCallActive) return "idle"
   if (isUserSpeaking) return "listening"
-  return "speaking"
+  if (isBotSpeaking) return "speaking"
+  return "thinking"
 }
 
+function toAgentState(phase: CallPhase): AgentState {
+  switch (phase) {
+    case "connecting": return "connecting"
+    case "listening":  return "listening"
+    case "speaking":   return "speaking"
+    case "thinking":   return "thinking"
+    default:           return "disconnected" as AgentState
+  }
+}
+
+const STATE_LABELS: Record<CallPhase, string> = {
+  connecting: "Connecting…",
+  listening:  "Listening",
+  thinking:   "Thinking…",
+  speaking:   "Speaking",
+  idle:       "Ready",
+}
+
+const STATE_COLORS: Record<CallPhase, string> = {
+  connecting: "text-blue-500",
+  listening:  "text-emerald-500",
+  thinking:   "text-amber-500",
+  speaking:   "text-cyan-500",
+  idle:       "text-muted-foreground",
+}
+
+// -----------------------------------------------------------------
+// Web-Audio bot-speech detector
+// Emits true when RMS power of the bot audio stream exceeds threshold.
+// -----------------------------------------------------------------
+const BOT_SPEECH_THRESHOLD = 0.008   // RMS; tweak if too sensitive
+const BOT_SPEECH_RELEASE_MS = 400    // hold "speaking" for this long after silence
+
+function useBotAudioLevel(
+  stream: MediaStream | null,
+  onBotSpeaking: (speaking: boolean) => void,
+) {
+  const rafRef = useRef<number | null>(null)
+  const releaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isSpeakingRef = useRef(false)
+  const analyserRef = useRef<AnalyserNode | null>(null)
+  const ctxRef = useRef<AudioContext | null>(null)
+
+  useEffect(() => {
+    if (!stream) return
+
+    const ctx = new AudioContext()
+    ctxRef.current = ctx
+    const src = ctx.createMediaStreamSource(stream)
+    const analyser = ctx.createAnalyser()
+    analyser.fftSize = 512
+    analyser.smoothingTimeConstant = 0.4
+    src.connect(analyser)
+    analyserRef.current = analyser
+
+    const buf = new Float32Array(analyser.fftSize)
+
+    const tick = () => {
+      analyser.getFloatTimeDomainData(buf)
+      let sum = 0
+      for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i]
+      const rms = Math.sqrt(sum / buf.length)
+
+      if (rms > BOT_SPEECH_THRESHOLD) {
+        if (releaseTimerRef.current) { clearTimeout(releaseTimerRef.current); releaseTimerRef.current = null }
+        if (!isSpeakingRef.current) { isSpeakingRef.current = true; onBotSpeaking(true) }
+      } else if (isSpeakingRef.current && !releaseTimerRef.current) {
+        releaseTimerRef.current = setTimeout(() => {
+          isSpeakingRef.current = false
+          releaseTimerRef.current = null
+          onBotSpeaking(false)
+        }, BOT_SPEECH_RELEASE_MS)
+      }
+
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      if (releaseTimerRef.current) clearTimeout(releaseTimerRef.current)
+      analyser.disconnect()
+      src.disconnect()
+      ctx.close()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stream])
+}
+
+// =================================================================
+// Main component
+// =================================================================
 export function TestAssistantDialog({
   open,
   onOpenChange,
@@ -105,7 +202,6 @@ export function TestAssistantDialog({
   },
   functions = [],
 }: TestAssistantDialogProps) {
-  // WebRTC connection state
   const webrtcRef = useRef<WebRTCConnection | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<"disconnected" | "connecting" | "connected" | "failed">("disconnected")
@@ -118,22 +214,27 @@ export function TestAssistantDialog({
   const [callDuration, setCallDuration] = useState(0)
   const [showTranscript, setShowTranscript] = useState(false)
   const [isUserSpeaking, setIsUserSpeaking] = useState(false)
+  const [isBotSpeaking, setIsBotSpeaking] = useState(false)
+  const [botStream, setBotStream] = useState<MediaStream | null>(null)
   const [transcript, setTranscript] = useState<ConversationMessage[]>([])
   const [cooldownRemaining, setCooldownRemaining] = useState(0)
   const [isInCooldown, setIsInCooldown] = useState(false)
 
   const [showVarDialog, setShowVarDialog] = useState(false)
   const [queryGroups, setQueryGroups] = useState<FunctionQueryGroup[]>([])
-  // flat map: "fnName||paramKey" -> value
   const [queryValues, setQueryValues] = useState<Record<string, string>>({})
 
   const transcriptEndRef = useRef<HTMLDivElement>(null)
   const { resolvedTheme } = useTheme()
 
-  const agentState = useMemo(
-    () => toAgentState(connectionStatus, isCallActive, isUserSpeaking),
-    [connectionStatus, isCallActive, isUserSpeaking],
+  // Bot speech detection via Web Audio API
+  useBotAudioLevel(botStream, setIsBotSpeaking)
+
+  const callPhase = useMemo(
+    () => deriveCallPhase(connectionStatus, isCallActive, isUserSpeaking, isBotSpeaking),
+    [connectionStatus, isCallActive, isUserSpeaking, isBotSpeaking],
   )
+  const agentState = useMemo(() => toAgentState(callPhase), [callPhase])
 
   // Call duration timer
   useEffect(() => {
@@ -163,7 +264,6 @@ export function TestAssistantDialog({
     transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [transcript])
 
-  // WebRTC event handlers
   const webrtcEventHandlers: WebRTCEventHandlers = useMemo(() => ({
     onConnectionStateChange: (state) => {
       if (state === "connected") {
@@ -173,10 +273,13 @@ export function TestAssistantDialog({
       } else if (state === "disconnected" || state === "failed") {
         setConnectionStatus("failed")
         setIsCallActive(false)
+        setBotStream(null)
+        setIsBotSpeaking(false)
       }
     },
     onIceConnectionStateChange: () => {},
     onTrack: (stream) => {
+      // Attach to <audio> for playback
       if (!audioRef.current) {
         audioRef.current = document.createElement("audio")
         audioRef.current.autoplay = true
@@ -193,11 +296,12 @@ export function TestAssistantDialog({
         }
         document.addEventListener("click", playAudio, { once: true })
       })
+      // Share stream for Web Audio analysis
+      setBotStream(stream)
     },
     onDataChannelOpen: () => {},
     onTranscript: (t: WebRTCTranscriptMessage) => {
       setTranscript((prev) => {
-        const messageId = `${t.role}-${t.text}-${Date.now()}`
         const isDuplicate = prev.some(
           (msg) =>
             msg.role === t.role &&
@@ -205,6 +309,7 @@ export function TestAssistantDialog({
             Math.abs(msg.timestamp.getTime() - Date.now()) < 1000,
         )
         if (isDuplicate) return prev
+        const messageId = `${t.role}-${t.text}-${Date.now()}`
         return [...prev, { id: messageId, role: t.role, message: t.text, timestamp: new Date() }]
       })
     },
@@ -215,6 +320,8 @@ export function TestAssistantDialog({
       setConnectionError(error.message)
       setConnectionStatus("failed")
       setIsCallActive(false)
+      setBotStream(null)
+      setIsBotSpeaking(false)
     },
   }), [volume])
 
@@ -230,7 +337,6 @@ export function TestAssistantDialog({
     webrtcRef.current = new WebRTCConnection(config, webrtcEventHandlers)
   }, [assistant?.id, webrtcEventHandlers])
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       webrtcRef.current?.endCall()
@@ -242,7 +348,6 @@ export function TestAssistantDialog({
     }
   }, [])
 
-  // Initialize when dialog opens
   useEffect(() => {
     if (open && assistant?.id) {
       initializeWebRTC()
@@ -251,12 +356,11 @@ export function TestAssistantDialog({
     }
   }, [open, assistant?.id, initializeWebRTC])
 
-  // End call when dialog closes
   useEffect(() => {
     if (!open && isCallActive) handleEndCall()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, isCallActive])
 
-  // Sync volume with audio element
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume / 100
   }, [volume])
@@ -281,6 +385,8 @@ export function TestAssistantDialog({
       setTranscript([])
       setLogs(["Ready to connect..."])
       setIsUserSpeaking(false)
+      setIsBotSpeaking(false)
+      setBotStream(null)
       await webrtcRef.current.startCall(query_params)
     } catch (error) {
       setConnectionError(error instanceof Error ? error.message : "Failed to start call")
@@ -289,37 +395,30 @@ export function TestAssistantDialog({
   }
 
   const handleStartCallClick = () => {
+    // Always show the pre-call params dialog so the user can fill in query params
     const groups = collectQueryParamGroups(functions)
-    if (groups.length > 0) {
-      // Build flat map from existing config values, keep any previously edited values
-      const initial: Record<string, string> = {}
-      groups.forEach((g) => {
-        g.params.forEach(({ key, value }) => {
-          const flatKey = `${g.functionName}||${key}`
-          initial[flatKey] = queryValues[flatKey] ?? value
-        })
+    const initial: Record<string, string> = {}
+    groups.forEach((g) => {
+      g.params.forEach(({ key, value }) => {
+        const flatKey = `${g.functionName}||${key}`
+        initial[flatKey] = queryValues[flatKey] ?? value
       })
-      setQueryGroups(groups)
-      setQueryValues(initial)
-      setShowVarDialog(true)
-    } else {
-      handleStartCall()
-    }
+    })
+    setQueryGroups(groups)
+    setQueryValues(initial)
+    setShowVarDialog(true)
   }
 
   const handleVarDialogSubmit = () => {
     setShowVarDialog(false)
-    // Reshape flat map → { functionName: { key: value, ... }, ... }
-    const byFunction: Record<string, Record<string, string>> = {}
+    // Build flat params: "FnName||key" → pass as flat key/value to the bot
+    const params: Record<string, string> = {}
     Object.entries(queryValues).forEach(([flatKey, val]) => {
       const sep = flatKey.indexOf("||")
-      if (sep === -1) return
-      const fnName = flatKey.slice(0, sep)
-      const paramKey = flatKey.slice(sep + 2)
-      if (!byFunction[fnName]) byFunction[fnName] = {}
-      byFunction[fnName][paramKey] = val
+      const paramKey = sep !== -1 ? flatKey.slice(sep + 2) : flatKey
+      if (val.trim()) params[paramKey] = val.trim()
     })
-    handleStartCall(byFunction)
+    handleStartCall(Object.keys(params).length > 0 ? params : undefined)
   }
 
   const handleEndCall = async () => {
@@ -334,6 +433,8 @@ export function TestAssistantDialog({
     setConnectionStatus("disconnected")
     setConnectionError(null)
     setIsUserSpeaking(false)
+    setIsBotSpeaking(false)
+    setBotStream(null)
     setIsMuted(false)
     setTranscript([])
     setLogs(["Ready to connect..."])
@@ -373,12 +474,10 @@ export function TestAssistantDialog({
         {/* ── Header bar ─────────────────────────────────────────────── */}
         <div className="flex items-center justify-between px-5 py-3 border-b shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
-            {/* Avatar circle */}
             <div className="relative shrink-0">
               <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center">
                 <Bot className="h-4 w-4 text-primary" />
               </div>
-              {/* Online indicator */}
               <span
                 className={cn(
                   "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background",
@@ -401,7 +500,6 @@ export function TestAssistantDialog({
               </p>
             </div>
           </div>
-
         </div>
 
         {/* ── Error alert ─────────────────────────────────────────────── */}
@@ -417,66 +515,75 @@ export function TestAssistantDialog({
         {/* ── Main content ────────────────────────────────────────────── */}
         <div className="flex-1 flex flex-col min-h-[320px] relative">
 
-          {/* Visualizer + status panel — shown when transcript is hidden */}
+          {/* Visualizer panel */}
           <div
             className={cn(
               "absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300",
               showTranscript ? "opacity-0 pointer-events-none" : "opacity-100",
             )}
           >
-            {/* Aura Visualizer — covers all states */}
-            <div className="flex flex-col items-center justify-center gap-5 px-6 py-6 h-full">
-              {/* Aura fills the center */}
+            <div className="flex flex-col items-center justify-center gap-6 px-6 py-6 h-full">
+
+              {/* Aura */}
               <div className="relative flex items-center justify-center w-48 h-48">
                 <AgentAudioVisualizerAura
                   size="xl"
                   color="#1FD5F9"
                   colorShift={0.3}
                   state={agentState}
-                  themeMode={(resolvedTheme === "dark" ? "dark" : "light")}
+                  themeMode={resolvedTheme === "dark" ? "dark" : "light"}
                   className="aspect-square w-full h-full"
                 />
-                {/* Initials overlay when disconnected */}
-                {!isCallActive && connectionStatus !== "connecting" && (
-                  <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-primary/40 pointer-events-none">
+                {/* Initials when idle */}
+                {callPhase === "idle" && connectionStatus !== "connecting" && (
+                  <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-primary/40 pointer-events-none select-none">
                     {initials}
                   </span>
                 )}
               </div>
 
-              {/* Status text */}
-              <div className="flex flex-col items-center gap-1.5 text-center">
-                {connectionStatus === "connecting" && (
-                  <div className="flex items-center gap-2 text-blue-600">
-                    <InlineLoader size="sm" />
-                    <span className="text-sm font-medium">Connecting...</span>
-                  </div>
-                )}
-                {connectionStatus === "connected" && (
+              {/* State pill + timer */}
+              <div className="flex flex-col items-center gap-2">
+                {isCallActive && (
                   <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-sm font-semibold text-green-600">Live</span>
+                    {/* Animated dot */}
+                    <span
+                      className={cn(
+                        "h-2 w-2 rounded-full",
+                        callPhase === "listening" && "bg-emerald-500 animate-pulse",
+                        callPhase === "thinking"  && "bg-amber-500 animate-bounce",
+                        callPhase === "speaking"  && "bg-cyan-500 animate-pulse",
+                      )}
+                    />
+                    <span className={cn("text-sm font-semibold tabular-nums", STATE_COLORS[callPhase])}>
+                      {STATE_LABELS[callPhase]}
+                    </span>
                     <span className="text-sm font-mono text-muted-foreground tabular-nums">
                       {formatDuration(callDuration)}
                     </span>
                   </div>
                 )}
-                {isUserSpeaking && connectionStatus === "connected" && (
-                  <span className="text-xs text-muted-foreground animate-pulse">Listening...</span>
+
+                {callPhase === "connecting" && (
+                  <div className="flex items-center gap-2 text-blue-500">
+                    <InlineLoader size="sm" />
+                    <span className="text-sm font-medium">Connecting…</span>
+                  </div>
                 )}
-                {!isCallActive && connectionStatus !== "connecting" && !isInCooldown && (
+
+                {callPhase === "idle" && !isInCooldown && connectionStatus !== "failed" && (
                   <span className="text-sm text-muted-foreground">
                     Press <strong>Start Call</strong> to begin
                   </span>
                 )}
+
                 {isInCooldown && (
                   <div className="flex items-center gap-2 text-amber-600">
                     <Clock className="h-3.5 w-3.5" />
-                    <span className="text-sm font-medium">
-                      Please wait {cooldownRemaining}s
-                    </span>
+                    <span className="text-sm font-medium">Please wait {cooldownRemaining}s</span>
                   </div>
                 )}
+
                 {connectionStatus === "failed" && !isInCooldown && (
                   <span className="text-sm text-destructive font-medium">Connection failed — try again</span>
                 )}
@@ -484,7 +591,7 @@ export function TestAssistantDialog({
             </div>
           </div>
 
-          {/* Transcript panel — shown when transcript is open */}
+          {/* Transcript panel */}
           <div
             className={cn(
               "absolute inset-0 flex flex-col transition-opacity duration-300 overflow-hidden",
@@ -526,8 +633,8 @@ export function TestAssistantDialog({
                 })
               )}
 
-              {/* Thinking indicator */}
-              {isCallActive && !isUserSpeaking && (
+              {/* Thinking dots in transcript view */}
+              {isCallActive && callPhase === "thinking" && (
                 <div className="flex items-start gap-2">
                   <div className="bg-muted rounded-lg rounded-bl-sm px-4 py-2.5">
                     <div className="flex gap-1 items-center h-4">
@@ -546,12 +653,10 @@ export function TestAssistantDialog({
         {/* ── Control bar ─────────────────────────────────────────────── */}
         <div className="shrink-0 px-5 pb-5 pt-3 border-t bg-background">
           <div
-            className={cn(
-              "flex items-center gap-1.5 p-2 rounded-[31px] border border-border/50 bg-background drop-shadow-sm w-fit mx-auto",
-            )}
+            className="flex items-center gap-1.5 p-2 rounded-[31px] border border-border/50 bg-background drop-shadow-sm w-fit mx-auto"
             aria-label="Voice assistant controls"
           >
-            {/* Mute toggle */}
+            {/* Mute */}
             <button
               onClick={toggleMute}
               disabled={!isCallActive}
@@ -568,7 +673,7 @@ export function TestAssistantDialog({
               {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </button>
 
-            {/* Volume popover */}
+            {/* Volume */}
             <Popover>
               <PopoverTrigger asChild>
                 <button
@@ -614,7 +719,6 @@ export function TestAssistantDialog({
               <MessageSquareText className="h-4 w-4" />
             </button>
 
-            {/* Separator */}
             <div className="w-px h-6 bg-border mx-0.5" />
 
             {/* End / Start call */}
@@ -670,44 +774,59 @@ export function TestAssistantDialog({
       </DialogContent>
     </Dialog>
 
-    {/* Query param input popup — shown before starting a call when functions have query params */}
+    {/* Pre-call query params dialog — always shown before starting */}
     <Dialog open={showVarDialog} onOpenChange={setShowVarDialog}>
       <DialogContent className="sm:max-w-[460px] max-h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>API Query Parameters</DialogTitle>
+          <DialogTitle>Test Call Parameters</DialogTitle>
           <DialogDescription>
-            Review or override query parameter values for this test call.
+            Fill in the query parameters for your API functions before starting the call.
           </DialogDescription>
         </DialogHeader>
+
         <div className="flex-1 overflow-y-auto space-y-5 py-2 pr-1">
-          {queryGroups.map((group) => (
-            <div key={group.functionName} className="space-y-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide truncate">
-                {group.functionName}
+          {queryGroups.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+              <p className="text-sm text-muted-foreground">No query parameters configured.</p>
+              <p className="text-xs text-muted-foreground/70">
+                Add an API function with query params in the agent&apos;s <strong>Advanced</strong> tab to pass values like <code className="bg-muted px-1 rounded">lead_id</code> or <code className="bg-muted px-1 rounded">mobile</code> here.
               </p>
-              {group.params.map(({ key }) => {
-                const flatKey = `${group.functionName}||${key}`
-                return (
-                  <div key={flatKey} className="flex items-center gap-3">
-                    <Label htmlFor={flatKey} className="w-32 shrink-0 text-sm truncate" title={key}>
-                      {key}
-                    </Label>
-                    <Input
-                      id={flatKey}
-                      placeholder={`Value for ${key}`}
-                      value={queryValues[flatKey] ?? ""}
-                      onChange={(e) =>
-                        setQueryValues((prev) => ({ ...prev, [flatKey]: e.target.value }))
-                      }
-                      className="text-sm h-9"
-                    />
-                  </div>
-                )
-              })}
             </div>
-          ))}
+          ) : (
+            queryGroups.map((group) => (
+              <div key={group.functionName} className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-px flex-1 bg-border" />
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide truncate shrink-0">
+                    {group.functionName}
+                  </p>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+                {group.params.map(({ key }) => {
+                  const flatKey = `${group.functionName}||${key}`
+                  return (
+                    <div key={flatKey} className="flex items-center gap-3">
+                      <Label htmlFor={flatKey} className="w-28 shrink-0 text-sm font-mono truncate text-muted-foreground" title={key}>
+                        {key}
+                      </Label>
+                      <Input
+                        id={flatKey}
+                        placeholder={`Enter ${key}…`}
+                        value={queryValues[flatKey] ?? ""}
+                        onChange={(e) =>
+                          setQueryValues((prev) => ({ ...prev, [flatKey]: e.target.value }))
+                        }
+                        className="text-sm h-9"
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            ))
+          )}
         </div>
-        <DialogFooter className="gap-2 sm:gap-0 pt-3 border-t">
+
+        <DialogFooter className="gap-2 sm:gap-2 pt-3 border-t">
           <Button variant="outline" size="sm" onClick={() => { setShowVarDialog(false); handleStartCall() }}>
             Skip
           </Button>

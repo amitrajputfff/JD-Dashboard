@@ -190,6 +190,7 @@ export default function AgentsPage() {
       sort_order: sortOrder,
       status: showDrafts ? "Draft" : "Active",
       tags: selectedTags.length > 0 ? selectedTags : undefined,
+      enabled: !!organizationId,
     })
   }, [
     currentPage,
@@ -340,7 +341,7 @@ export default function AgentsPage() {
   }
 
   React.useEffect(() => {
-    const orgId = authUtils.getOrganizationId()
+    const orgId = authUtils.getOrganizationId() || 'default-org'
     setOrganizationId(orgId)
     setIsCheckingOrg(false)
   }, [])

@@ -104,7 +104,7 @@ export const mapApiAgentToAgent = (apiAgent: any): Agent => {
       language: 'en',
       gender: 'neutral',
       speed: parseFloat(apiAgent.speech_speed) || 1.0,
-      pitch: parseFloat(apiAgent.pitch.replace('%', '')) || 0,
+      pitch: parseFloat((apiAgent.pitch || '0').replace('%', '')) || 0,
     },
     
     personality: {

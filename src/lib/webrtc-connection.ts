@@ -130,11 +130,8 @@ export class WebRTCConnection {
         this.peerConnection!.addTrack(track, this.localStream!);
       });
 
-      // Create data channel with send queue
-      this.dataChannel = this.peerConnection.createDataChannel("app", {
-        negotiated: true,
-        id: 0
-      });
+      // Create data channel (non-negotiated so the server gets the datachannel event)
+      this.dataChannel = this.peerConnection.createDataChannel("app");
 
       this.dataChannel.onopen = () => {
         this.log('✅ Data channel opened');

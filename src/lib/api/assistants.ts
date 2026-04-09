@@ -241,7 +241,7 @@ export interface CreateAssistantResponse {
 
 export const assistantsApi = {
   // Get organization ID from current user
-  async getOrganizationId(): Promise<string | null> {
+  async getOrganizationId(): Promise<string> {
     try {
       if (typeof window !== 'undefined') {
         const { authStorage } = await import('../auth-storage');
@@ -250,11 +250,10 @@ export const assistantsApi = {
           return user.organization_id;
         }
       }
-      return null;
     } catch (error) {
       console.error('Failed to get organization ID:', error);
-      return null;
     }
+    return 'default-org';
   },
 
   // Get assistants with pagination and filters
@@ -262,9 +261,6 @@ export const assistantsApi = {
     try {
       // Get organization ID if not provided
       const orgId = organizationId || await this.getOrganizationId();
-      if (!orgId) {
-        throw new Error('No organization mapped');
-      }
 
       // Get token from auth storage
       let token = '';
@@ -279,7 +275,7 @@ export const assistantsApi = {
       searchParams.append('organization_id', orgId);
       searchParams.append('is_deleted', isDeleted.toString());
 
-      const response = await fetch(`https://backend.liaplus.com/backend/api/assistants?${searchParams.toString()}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/assistants?${searchParams.toString()}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -320,7 +316,7 @@ export const assistantsApi = {
       }
 
       // Add is_active=true to only fetch active providers
-      const response = await fetch(`https://backend.liaplus.com/backend/api/providers?skip=${skip}&limit=${limit}&service_type=${serviceType}&organization_id=${orgId}&is_active=true`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/providers?skip=${skip}&limit=${limit}&service_type=${serviceType}&organization_id=${orgId}&is_active=true`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -367,7 +363,7 @@ export const assistantsApi = {
         token = authStorage.getAccessToken() || '';
       }
 
-      const response = await fetch(`https://backend.liaplus.com/backend/api/llm-models?skip=${skip}&limit=${limit}&provider_id=${providerId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/llm-models?skip=${skip}&limit=${limit}&provider_id=${providerId}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -418,7 +414,7 @@ export const assistantsApi = {
         token = authStorage.getAccessToken() || '';
       }
 
-      const response = await fetch(`https://backend.liaplus.com/backend/api/stt-models?skip=${skip}&limit=${limit}&provider_id=${providerId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/stt-models?skip=${skip}&limit=${limit}&provider_id=${providerId}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -469,7 +465,7 @@ export const assistantsApi = {
         token = authStorage.getAccessToken() || '';
       }
 
-      const response = await fetch(`https://backend.liaplus.com/backend/api/tts-models?skip=${skip}&limit=${limit}&provider_id=${providerId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/tts-models?skip=${skip}&limit=${limit}&provider_id=${providerId}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -520,7 +516,7 @@ export const assistantsApi = {
         token = authStorage.getAccessToken() || '';
       }
 
-      const response = await fetch(`https://backend.liaplus.com/backend/api/voices?skip=${skip}&limit=${limit}&tts_model_id=${ttsModelId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/voices?skip=${skip}&limit=${limit}&tts_model_id=${ttsModelId}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -571,7 +567,7 @@ export const assistantsApi = {
         token = authStorage.getAccessToken() || '';
       }
 
-      const response = await fetch('https://backend.liaplus.com/backend/api/languages', {
+      const response = await fetch('${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/languages', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -635,7 +631,7 @@ export const assistantsApi = {
       }
 
       if (!organizationId) {
-        throw new Error('Organization ID not found');
+        organizationId = 'default-org';
       }
 
       const requestBody = {
@@ -655,7 +651,7 @@ export const assistantsApi = {
         prompt: data.prompt,
       };
 
-      const response = await fetch('https://backend.liaplus.com/backend/api/assistants/ai-create', {
+      const response = await fetch('${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/assistants/ai-create', {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -687,7 +683,7 @@ export const assistantsApi = {
         token = authStorage.getAccessToken() || '';
       }
 
-      const response = await fetch(`https://backend.liaplus.com/backend/api/assistants/${assistantId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/assistants/${assistantId}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -722,7 +718,7 @@ export const assistantsApi = {
         token = authStorage.getAccessToken() || '';
       }
 
-      const response = await fetch(`https://backend.liaplus.com/backend/api/assistants/${assistantId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/assistants/${assistantId}`, {
         method: 'PUT',
         headers: {
           'Accept': 'application/json',
@@ -753,7 +749,7 @@ export const assistantsApi = {
         token = authStorage.getAccessToken() || '';
       }
 
-      const response = await fetch(`https://backend.liaplus.com/backend/api/llm-models/${modelId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/llm-models/${modelId}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -783,7 +779,7 @@ export const assistantsApi = {
         token = authStorage.getAccessToken() || '';
       }
 
-      const response = await fetch(`https://backend.liaplus.com/backend/api/tts-models/${modelId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/tts-models/${modelId}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -813,7 +809,7 @@ export const assistantsApi = {
         token = authStorage.getAccessToken() || '';
       }
 
-      const response = await fetch(`https://backend.liaplus.com/backend/api/stt-models/${modelId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/stt-models/${modelId}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -843,7 +839,7 @@ export const assistantsApi = {
         token = authStorage.getAccessToken() || '';
       }
 
-      const response = await fetch(`https://backend.liaplus.com/backend/api/voices/${voiceId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/voices/${voiceId}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -873,7 +869,7 @@ export const assistantsApi = {
         token = authStorage.getAccessToken() || '';
       }
 
-      const response = await fetch(`https://backend.liaplus.com/backend/api/assistants/${assistantId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/assistants/${assistantId}`, {
         method: 'DELETE',
         headers: {
           'Accept': 'application/json',
@@ -904,7 +900,7 @@ export const assistantsApi = {
         token = authStorage.getAccessToken() || '';
       }
 
-      const response = await fetch(`https://backend.liaplus.com/backend/api/assistants/${assistantId}/clone`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/assistants/${assistantId}/clone`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',

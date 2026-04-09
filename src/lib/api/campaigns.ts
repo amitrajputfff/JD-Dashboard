@@ -32,13 +32,7 @@ export const campaignsApi = {
     }
     
     if (!orgId) {
-      console.warn('No organization mapped - returning empty campaigns list');
-      return {
-        campaigns: [],
-        total: 0,
-        skip: 0,
-        limit: 10
-      };
+      orgId = 'default-org';
     }
 
     const searchParams = new URLSearchParams();
@@ -70,7 +64,7 @@ export const campaignsApi = {
       token = authStorageModule.authStorage.getAccessToken() || '';
     }
 
-    const response = await fetch(`https://backend.liaplus.com/backend/api/campaigns?${searchParams.toString()}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/campaigns?${searchParams.toString()}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -110,7 +104,7 @@ export const campaignsApi = {
     }
 
     const queryString = searchParams.toString();
-    const url = `https://backend.liaplus.com/backend/api/campaigns/${id}${queryString ? `?${queryString}` : ''}`;
+    const url = `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/campaigns/${id}${queryString ? `?${queryString}` : ''}`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -161,7 +155,7 @@ export const campaignsApi = {
       token = authStorageModule.authStorage.getAccessToken() || '';
     }
 
-    const response = await fetch(`https://backend.liaplus.com/backend/api/campaigns/${id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/campaigns/${id}`, {
       method: 'PUT',
       headers: {
         'Accept': 'application/json',
@@ -230,7 +224,7 @@ export const campaignsApi = {
       token = authStorageModule.authStorage.getAccessToken() || '';
     }
 
-    const response = await fetch(`https://backend.liaplus.com/backend/api/campaigns/${id}/upload-contacts`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/campaigns/${id}/upload-contacts`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -264,7 +258,7 @@ export const campaignsApi = {
       token = authStorageModule.authStorage.getAccessToken() || '';
     }
 
-    const response = await fetch(`https://backend.liaplus.com/backend/api/campaigns/${campaignId}/start`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/campaigns/${campaignId}/start`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -298,7 +292,7 @@ export const campaignsApi = {
       token = authStorageModule.authStorage.getAccessToken() || '';
     }
 
-    const response = await fetch('https://backend.liaplus.com/backend/api/campaigns/make-call', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/campaigns/make-call`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

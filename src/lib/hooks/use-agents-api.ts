@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo } from 'react';
-import { mockAgents } from '@/lib/mock-data/agents';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { agentsApi } from '@/lib/api/agents';
 import { Agent } from '@/types/agent';
 
 interface UseAgentsApiParams {
@@ -12,7 +12,7 @@ interface UseAgentsApiParams {
   sort_order?: 'asc' | 'desc';
   status?: string;
   tags?: string[];
-  enabled?: boolean; // Add option to disable API calls
+  enabled?: boolean;
 }
 
 interface UseAgentsApiReturn {
@@ -26,68 +26,52 @@ interface UseAgentsApiReturn {
 
 export const useAgentsApi = (initialParams: UseAgentsApiParams = {}): UseAgentsApiReturn => {
   const [params, setParams] = useState<UseAgentsApiParams>(initialParams);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const { agents, total } = useMemo(() => {
-    if (params.enabled === false) {
-      return { agents: [], total: 0 };
+  const fetchAgents = useCallback(async (p: UseAgentsApiParams) => {
+    if (p.enabled === false) {
+      setAgents([]);
+      setTotal(0);
+      return;
     }
 
-    let filtered = [...mockAgents];
+    if (abortRef.current) abortRef.current.abort();
+    abortRef.current = new AbortController();
 
-    // Filter by is_deleted
-    if (params.is_deleted !== undefined) {
-      filtered = filtered.filter(a => a.is_deleted === params.is_deleted);
-    }
-
-    // Filter by status
-    if (params.status) {
-      filtered = filtered.filter(a => a.status === params.status);
-    }
-
-    // Filter by search
-    if (params.search) {
-      const term = params.search.toLowerCase();
-      filtered = filtered.filter(
-        a =>
-          a.name.toLowerCase().includes(term) ||
-          a.description?.toLowerCase().includes(term) ||
-          a.category?.toLowerCase().includes(term)
-      );
-    }
-
-    // Filter by tags
-    if (params.tags && params.tags.length > 0) {
-      filtered = filtered.filter(a =>
-        params.tags!.some(tag => a.tags?.includes(tag))
-      );
-    }
-
-    // Sort
-    if (params.sort_by) {
-      const key = params.sort_by as keyof Agent;
-      const order = params.sort_order === 'desc' ? -1 : 1;
-      filtered = filtered.slice().sort((a, b) => {
-        const av = a[key];
-        const bv = b[key];
-        if (av == null && bv == null) return 0;
-        if (av == null) return 1;
-        if (bv == null) return -1;
-        if (av < bv) return -1 * order;
-        if (av > bv) return 1 * order;
-        return 0;
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await agentsApi.getAgents({
+        skip: p.skip,
+        limit: p.limit,
+        organization_id: p.organization_id,
+        is_deleted: p.is_deleted,
+        search: p.search,
+        sort_by: p.sort_by,
+        sort_order: p.sort_order,
+        status: p.status,
+        tags: p.tags,
       });
+      setAgents((result.assistants as unknown as Agent[]) ?? []);
+      setTotal(result.total ?? 0);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name !== 'AbortError') {
+        setError(err.message ?? 'Failed to load agents');
+      }
+    } finally {
+      setLoading(false);
     }
+  }, []);
 
-    const total = filtered.length;
-
-    // Pagination
-    const skip = params.skip ?? 0;
-    const limit = params.limit ?? filtered.length;
-    const agents = filtered.slice(skip, skip + limit);
-
-    return { agents, total };
+  useEffect(() => {
+    fetchAgents(params);
   }, [
     params.enabled,
+    params.organization_id,
     params.is_deleted,
     params.status,
     params.search,
@@ -99,19 +83,12 @@ export const useAgentsApi = (initialParams: UseAgentsApiParams = {}): UseAgentsA
   ]);
 
   const refetch = useCallback(async () => {
-    // No-op: data is computed synchronously from mock data
-  }, []);
+    await fetchAgents(params);
+  }, [fetchAgents, params]);
 
   const updateParams = useCallback((newParams: Partial<UseAgentsApiParams>) => {
     setParams(prev => ({ ...prev, ...newParams }));
   }, []);
 
-  return {
-    agents,
-    total,
-    loading: false,
-    error: null,
-    refetch,
-    updateParams,
-  };
+  return { agents, total, loading, error, refetch, updateParams };
 };

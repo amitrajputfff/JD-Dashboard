@@ -1,13 +1,13 @@
-import { useCallback, useMemo } from 'react';
-import { mockAgents } from '@/lib/mock-data/agents';
+import { useState, useEffect, useCallback } from 'react';
+import { agentsApi } from '@/lib/api/agents';
 import { Agent } from '@/types/agent';
 
 interface UseAgentsComprehensiveParams {
   organization_id?: string;
   enabled?: boolean;
-  fetchDeleted?: boolean; // Only fetch deleted counts when needed
-  fetchDrafts?: boolean;  // Only fetch draft counts when needed
-  skipNormalCount?: boolean; // Skip normal count if main hook is already fetching it
+  fetchDeleted?: boolean;
+  fetchDrafts?: boolean;
+  skipNormalCount?: boolean;
 }
 
 interface AgentData {
@@ -18,66 +18,65 @@ interface AgentData {
 }
 
 interface UseAgentsComprehensiveReturn {
-  // Normal agents (not drafts, not deleted)
   normalAgents: AgentData;
-  // Draft agents
   draftAgents: AgentData;
-  // Deleted agents
   deletedAgents: AgentData;
-  // Counts for display
-  counts: {
-    normal: number;
-    drafts: number;
-    deleted: number;
-  };
-  // Control functions
+  counts: { normal: number; drafts: number; deleted: number };
   refetchAll: () => Promise<void>;
   refetchNormal: () => Promise<void>;
   refetchDrafts: () => Promise<void>;
   refetchDeleted: () => Promise<void>;
 }
 
-export const useAgentsComprehensive = (initialParams: UseAgentsComprehensiveParams = {}): UseAgentsComprehensiveReturn => {
-  const counts = useMemo(() => {
-    const deletedCount = mockAgents.filter(a => a.is_deleted === true).length;
-    const draftCount = mockAgents.filter(a => !a.is_deleted && a.status === 'Draft').length;
-    const nonDeletedTotal = mockAgents.filter(a => !a.is_deleted).length;
-    const normalCount = Math.max(0, nonDeletedTotal - draftCount);
+const EMPTY: AgentData = { agents: [], total: 0, loading: false, error: null };
 
-    return {
-      normal: initialParams.skipNormalCount ? 0 : normalCount,
-      drafts: initialParams.fetchDrafts ? draftCount : 0,
-      deleted: initialParams.fetchDeleted ? deletedCount : 0,
-    };
-  }, [initialParams.skipNormalCount, initialParams.fetchDrafts, initialParams.fetchDeleted]);
+export const useAgentsComprehensive = (params: UseAgentsComprehensiveParams = {}): UseAgentsComprehensiveReturn => {
+  const { organization_id, enabled = true, fetchDeleted, fetchDrafts, skipNormalCount } = params;
 
-  const noop = useCallback(async () => {
-    // No-op: data is computed synchronously from mock data
-  }, []);
+  const [normal, setNormal] = useState<AgentData>(EMPTY);
+  const [drafts, setDrafts] = useState<AgentData>(EMPTY);
+  const [deleted, setDeleted] = useState<AgentData>(EMPTY);
+
+  const fetchNormal = useCallback(async () => {
+    if (!enabled || skipNormalCount) return;
+    try {
+      const res = await agentsApi.getAgents({ organization_id, is_deleted: false, status: 'Active', limit: 1 });
+      setNormal({ agents: [], total: res.total ?? 0, loading: false, error: null });
+    } catch { /* ignore */ }
+  }, [organization_id, enabled, skipNormalCount]);
+
+  const fetchDraftsData = useCallback(async () => {
+    if (!enabled || !fetchDrafts) return;
+    try {
+      const res = await agentsApi.getAgents({ organization_id, is_deleted: false, status: 'Draft', limit: 1 });
+      setDrafts({ agents: [], total: res.total ?? 0, loading: false, error: null });
+    } catch { /* ignore */ }
+  }, [organization_id, enabled, fetchDrafts]);
+
+  const fetchDeletedData = useCallback(async () => {
+    if (!enabled || !fetchDeleted) return;
+    try {
+      const res = await agentsApi.getAgents({ organization_id, is_deleted: true, limit: 1 });
+      setDeleted({ agents: [], total: res.total ?? 0, loading: false, error: null });
+    } catch { /* ignore */ }
+  }, [organization_id, enabled, fetchDeleted]);
+
+  const refetchAll = useCallback(async () => {
+    await Promise.all([fetchNormal(), fetchDraftsData(), fetchDeletedData()]);
+  }, [fetchNormal, fetchDraftsData, fetchDeletedData]);
+
+  useEffect(() => { fetchNormal(); }, [fetchNormal]);
+  useEffect(() => { fetchDraftsData(); }, [fetchDraftsData]);
+  useEffect(() => { fetchDeletedData(); }, [fetchDeletedData]);
 
   return {
-    normalAgents: {
-      agents: [],
-      total: counts.normal,
-      loading: false,
-      error: null,
-    },
-    draftAgents: {
-      agents: [],
-      total: counts.drafts,
-      loading: false,
-      error: null,
-    },
-    deletedAgents: {
-      agents: [],
-      total: counts.deleted,
-      loading: false,
-      error: null,
-    },
-    counts,
-    refetchAll: noop,
-    refetchNormal: noop,
-    refetchDrafts: noop,
-    refetchDeleted: noop,
+    normalAgents: normal,
+    draftAgents: drafts,
+    deletedAgents: deleted,
+    counts: { normal: normal.total, drafts: drafts.total, deleted: deleted.total },
+    refetchAll,
+    refetchNormal: fetchNormal,
+    refetchDrafts: fetchDraftsData,
+    refetchDeleted: fetchDeletedData,
   };
 };

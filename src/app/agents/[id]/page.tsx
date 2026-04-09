@@ -15,7 +15,6 @@ import { useAssistantMetrics } from '@/hooks/use-assistant-metrics';
 import { TimeRangeSelector } from '@/components/ui/time-range-selector';
 import { Loader } from '@/components/ui/loader';
 import { TestAssistantDialog } from '@/components/test-assistant-dialog';
-import { WidgetSection } from '@/components/agents/widget-section';
 import {
   Drawer,
   DrawerClose,
@@ -74,7 +73,6 @@ import {
   RotateCcw,
   Play,
   Code,
-  Globe
 } from 'lucide-react';
 
 import {
@@ -667,16 +665,11 @@ export default function AgentDetailsPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [formIsDirty, isUpdating, isSubmitting]);
 
-  // Validation function for required fields (only when not saving as draft)
+  // Validation function for required fields — only name is truly required.
+  // Model IDs (llm/stt/tts/voice) are optional: GeminiLive handles all-in-one.
   const validateRequiredFields = (data: any) => {
-    const missingFields = [];
-    
-    if (!data.llm_model_id) missingFields.push('LLM Model');
-    if (!data.language_id) missingFields.push('Language');
-    if (!data.stt_model_id) missingFields.push('STT Model');
-    if (!data.tts_model_id) missingFields.push('TTS Model');
-    if (!data.voice_id) missingFields.push('Voice');
-    
+    const missingFields: string[] = [];
+    if (!data.name?.trim()) missingFields.push('Name');
     return missingFields;
   };
 
@@ -1348,7 +1341,7 @@ export default function AgentDetailsPage() {
                     {agent.status.charAt(0).toUpperCase() + agent.status.slice(1)}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm max-w-5xl text-muted-foreground">
                   {isDraft ? 'Configure your agent settings and activate when ready' : agent.description}
                 </p>
               </div>
@@ -1452,7 +1445,6 @@ export default function AgentDetailsPage() {
                     { title: "Basic Info", value: "basic-info", icon: User },
                     { title: "Prompt", value: "llm-config", icon: FileText },
                     { title: "Advanced", value: "advanced-settings", icon: Settings },
-                    { title: "Widget", value: "widget", icon: Globe },
                   ].map((tab) => {
                     const sectionErrors = getSectionErrors();
                     const hasError = sectionErrors[tab.value] || false;
@@ -1468,7 +1460,7 @@ export default function AgentDetailsPage() {
                         }}
                         className={`relative px-4 py-2 rounded-full transition-colors flex items-center gap-2 ${
                           activeTab === tab.value
-                            ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
+                            ? 'bg-primary text-primary-foreground'
                             : hasError
                               ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800'
                               : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
@@ -1576,7 +1568,7 @@ export default function AgentDetailsPage() {
               </div>
 
               {/* Error Display */}
-              {activeTab !== 'widget' && Object.keys(errors).length > 0 && (
+              {Object.keys(errors).length > 0 && (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="h-4 w-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">!</div>
@@ -1632,10 +1624,6 @@ export default function AgentDetailsPage() {
             </form>
           </Form>
 
-          {/* Widget Section - Outside Form */}
-          {activeTab === 'widget' && (
-            <WidgetSection agent={agent} />
-          )}
         </div>
       </SidebarInset>
 

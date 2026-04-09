@@ -130,7 +130,7 @@ export interface ConfirmUploadsResponse {
 }
 
 export class KnowledgeBaseAPI {
-  private static baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://backend.liaplus.com/backend'
+  private static baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/backend'
 
   static async uploadFile(params: FileUploadParams & { organization_id?: string }): Promise<FileUploadResponse> {
     const token = authUtils.getAccessToken()

@@ -80,9 +80,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   src="/JustDialLogo.svg"
                   alt="JustDial"
                   width={80}
-                  height={20}
+                  height={80}
                   priority
                   className="object-contain"
+                  style={{ height: "auto" }}
                 />
               </a>
             </SidebarMenuButton>

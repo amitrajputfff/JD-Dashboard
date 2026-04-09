@@ -195,9 +195,9 @@ export const authUtils = {
    * Get organization ID from current user
    * @returns string | null - organization ID or null if not available
    */
-  getOrganizationId(): string | null {
+  getOrganizationId(): string {
     const user = this.getCurrentUser();
-    return user?.organization_id || null;
+    return user?.organization_id || 'default-org';
   }
 };
 

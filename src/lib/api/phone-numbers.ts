@@ -19,18 +19,14 @@ const resolveOrganizationId = (organizationId?: string): string => {
     return organizationId;
   }
 
-  if (typeof window === 'undefined') {
-    throw new Error('Organization ID is required');
+  if (typeof window !== 'undefined') {
+    const user = authStorage.getUser();
+    if (user?.organization_id) {
+      return user.organization_id;
+    }
   }
 
-  const user = authStorage.getUser();
-  const derivedOrgId = user?.organization_id;
-
-  if (!derivedOrgId) {
-    throw new Error('Organization ID is required');
-  }
-
-  return derivedOrgId;
+  return 'default-org';
 };
 
 export const phoneNumbersApi = {

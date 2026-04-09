@@ -1,7 +1,6 @@
 import { apiClient } from './client';
 import { Agent, CreateAgentRequest, UpdateAgentRequest } from '@/types/agent';
-import { PaginatedResponse, ApiResponse, AssistantsApiResponse } from '@/types/api';
-import { WidgetConfig, SaveWidgetConfigResponse, GetWidgetConfigResponse } from '@/types/widget';
+import { ApiResponse, AssistantsApiResponse } from '@/types/api';
 
 export const agentsApi = {
   // Get all agents with pagination and filters
@@ -31,11 +30,7 @@ export const agentsApi = {
     }
     
     if (!orgId) {
-      console.warn('No organization mapped - returning empty agents list');
-      return {
-        assistants: [],
-        total: 0
-      };
+      orgId = 'default-org';
     }
 
     const searchParams = new URLSearchParams();
@@ -64,7 +59,7 @@ export const agentsApi = {
       token = authStorageModule.authStorage.getAccessToken() || '';
     }
 
-    const response = await fetch(`https://backend.liaplus.com/backend/api/assistants?${searchParams.toString()}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/assistants?${searchParams.toString()}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -104,7 +99,7 @@ export const agentsApi = {
       token = authStorageModule.authStorage.getAccessToken() || '';
     }
 
-    const response = await fetch(`https://backend.liaplus.com/backend/api/assistants/${assistantId}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/assistants/${assistantId}`, {
       method: 'DELETE',
       headers: {
         'Accept': 'application/json',
@@ -130,7 +125,7 @@ export const agentsApi = {
       token = authStorageModule.authStorage.getAccessToken() || '';
     }
 
-    const response = await fetch(`https://backend.liaplus.com/backend/api/assistants/${assistantId}/restore`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/assistants/${assistantId}/restore`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -156,7 +151,7 @@ export const agentsApi = {
       token = authStorageModule.authStorage.getAccessToken() || '';
     }
 
-    const response = await fetch(`https://backend.liaplus.com/backend/api/assistants/${assistantId}/clone`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/backend/api/assistants/${assistantId}/clone`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -195,56 +190,4 @@ export const agentsApi = {
     return apiClient.get(`/agents/${id}/analytics${params}`);
   },
 
-  // Save widget configuration
-  saveWidgetConfig: async (assistantId: string, config: WidgetConfig): Promise<SaveWidgetConfigResponse> => {
-    // Get token from auth storage
-    let token = '';
-    if (typeof window !== 'undefined') {
-      const authStorageModule = await import('../auth-storage');
-      token = authStorageModule.authStorage.getAccessToken() || '';
-    }
-
-    const response = await fetch('/api/widget/config', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        assistant_id: assistantId,
-        config,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
-  },
-
-  // Get widget configuration
-  getWidgetConfig: async (assistantId: string): Promise<GetWidgetConfigResponse> => {
-    // Get token from auth storage
-    let token = '';
-    if (typeof window !== 'undefined') {
-      const authStorageModule = await import('../auth-storage');
-      token = authStorageModule.authStorage.getAccessToken() || '';
-    }
-
-    const response = await fetch(`/api/widget/config/${assistantId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
-  },
 };

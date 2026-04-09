@@ -104,8 +104,8 @@ export const providersApi = {
     searchParams.append('organization_id', orgId);
     if (params?.is_active !== undefined) searchParams.append('is_active', params.is_active.toString());
 
-    const response = await authenticatedFetch(`https://backend.liaplus.com/backend/api/providers?${searchParams.toString()}`);
-    return response.json();
+    // Providers are statically configured (Gemini/Sarvam/Cartesia)
+    return { providers: [], total: 0 };
   },
 
   // Get LLM providers specifically
@@ -174,9 +174,8 @@ export const providersApi = {
   },
 
   // Get provider by ID
-  getProvider: async (id: number): Promise<Provider> => {
-    const response = await authenticatedFetch(`https://backend.liaplus.com/backend/api/providers/${id}`);
-    return response.json();
+  getProvider: async (_id: number): Promise<Provider> => {
+    throw new Error('Provider details not available');
   }
 };
 
@@ -194,8 +193,7 @@ export const ttsModelsApi = {
     if (params?.provider_id !== undefined) searchParams.append('provider_id', params.provider_id.toString());
     if (params?.is_active !== undefined) searchParams.append('is_active', params.is_active.toString());
 
-    const response = await authenticatedFetch(`https://backend.liaplus.com/backend/api/tts-models?${searchParams.toString()}`);
-    return response.json();
+    return { tts_models: [], total: 0 };
   },
 
   // Get TTS models by provider ID
@@ -211,9 +209,8 @@ export const ttsModelsApi = {
   },
 
   // Get TTS model by ID
-  getTTSModel: async (id: number): Promise<TTSModel> => {
-    const response = await authenticatedFetch(`https://backend.liaplus.com/backend/api/tts-models/${id}`);
-    return response.json();
+  getTTSModel: async (_id: number): Promise<TTSModel> => {
+    throw new Error('TTS model details not available');
   }
 };
 
@@ -231,8 +228,7 @@ export const voicesApi = {
     if (params?.tts_model_id !== undefined) searchParams.append('tts_model_id', params.tts_model_id.toString());
     if (params?.is_active !== undefined) searchParams.append('is_active', params.is_active.toString());
 
-    const response = await authenticatedFetch(`https://backend.liaplus.com/backend/api/voices?${searchParams.toString()}`);
-    return response.json();
+    return { voices: [], total: 0 };
   },
 
   // Get voices by TTS model ID
@@ -248,9 +244,8 @@ export const voicesApi = {
   },
 
   // Get voice by ID
-  getVoice: async (id: number): Promise<Voice> => {
-    const response = await authenticatedFetch(`https://backend.liaplus.com/backend/api/voices/${id}`);
-    return response.json();
+  getVoice: async (_id: number): Promise<Voice> => {
+    throw new Error('Voice details not available');
   }
 };
 
@@ -268,8 +263,7 @@ export const sttModelsApi = {
     if (params?.provider_id !== undefined) searchParams.append('provider_id', params.provider_id.toString());
     if (params?.is_active !== undefined) searchParams.append('is_active', params.is_active.toString());
 
-    const response = await authenticatedFetch(`https://backend.liaplus.com/backend/api/stt-models?${searchParams.toString()}`);
-    return response.json();
+    return { stt_models: [], total: 0 };
   },
 
   // Get STT models by provider ID
@@ -285,17 +279,15 @@ export const sttModelsApi = {
   },
 
   // Get STT model by ID
-  getSTTModel: async (id: number): Promise<STTModel> => {
-    const response = await authenticatedFetch(`https://backend.liaplus.com/backend/api/stt-models/${id}`);
-    return response.json();
+  getSTTModel: async (_id: number): Promise<STTModel> => {
+    throw new Error('STT model details not available');
   }
 };
 
 export const languagesApi = {
   // Get all languages
   getLanguages: async (): Promise<LanguagesResponse> => {
-    const response = await authenticatedFetch('https://backend.liaplus.com/backend/api/languages');
-    return response.json();
+    return { languages: [], total: 0 };
   }
 };
 
@@ -313,8 +305,7 @@ export const llmModelsApi = {
     if (params?.provider_id !== undefined) searchParams.append('provider_id', params.provider_id.toString());
     if (params?.is_active !== undefined) searchParams.append('is_active', params.is_active.toString());
 
-    const response = await authenticatedFetch(`https://backend.liaplus.com/backend/api/llm-models?${searchParams.toString()}`);
-    return response.json();
+    return { llm_models: [], total: 0 };
   },
 
   // Get LLM models by provider ID
@@ -330,8 +321,7 @@ export const llmModelsApi = {
   },
 
   // Get LLM model by ID
-  getLLMModel: async (id: number): Promise<LLMModel> => {
-    const response = await authenticatedFetch(`https://backend.liaplus.com/backend/api/llm-models/${id}`);
-    return response.json();
+  getLLMModel: async (_id: number): Promise<LLMModel> => {
+    throw new Error('LLM model details not available');
   }
 };

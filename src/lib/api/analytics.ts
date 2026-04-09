@@ -95,131 +95,27 @@ export const analyticsApi = {
   },
 
   // Get assistant metrics
-  getAssistantMetrics: async (assistantId: string, timeRange: string = '7d'): Promise<ApiResponse<any>> => {
-    try {
-      // Get token from auth storage
-      let token = '';
-      if (typeof window !== 'undefined') {
-        const { authStorage } = await import('../auth-storage');
-        token = authStorage.getAccessToken() || '';
-      }
-
-      const response = await fetch(`https://backend.liaplus.com/backend/api/assistants/${assistantId}/metrics?timeRange=${timeRange}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return { data };
-    } catch (error) {
-      console.error('Failed to fetch assistant metrics:', error);
-      throw error;
-    }
+  getAssistantMetrics: async (_assistantId: string, _timeRange: string = '7d'): Promise<ApiResponse<any>> => {
+    return { data: null };
   },
 
   // Get 6-month performance analytics
-  getPerformanceAnalytics: async (organizationId: string): Promise<any> => {
-    try {
-      let token = '';
-      if (typeof window !== 'undefined') {
-        const { authStorage } = await import('../auth-storage');
-        token = authStorage.getAccessToken() || '';
-      }
-
-      const response = await fetch(`https://backend.liaplus.com/backend/api/customer-service/performance-analytics?organization_id=${organizationId}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to fetch performance analytics:', error);
-      throw error;
-    }
+  getPerformanceAnalytics: async (_organizationId: string): Promise<any> => {
+    return null;
   },
 
   // Get customer service dashboard metrics
-  getCustomerServiceDashboard: async (params: {
+  getCustomerServiceDashboard: async (_params: {
     organizationId: string;
     timeRange?: string;
     includeTrends?: boolean;
     includeAgentDetails?: boolean;
   }): Promise<any> => {
-    try {
-      let token = '';
-      if (typeof window !== 'undefined') {
-        const { authStorage } = await import('../auth-storage');
-        token = authStorage.getAccessToken() || '';
-      }
-
-      const searchParams = new URLSearchParams();
-      searchParams.append('organization_id', params.organizationId);
-      if (params.timeRange) searchParams.append('time_range', params.timeRange);
-      if (params.includeTrends !== undefined) searchParams.append('include_trends', String(params.includeTrends));
-      if (params.includeAgentDetails !== undefined) searchParams.append('include_agent_details', String(params.includeAgentDetails));
-
-      const response = await fetch(`https://backend.liaplus.com/backend/api/customer-service/dashboard?${searchParams.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to fetch customer service dashboard:', error);
-      throw error;
-    }
+    return null;
   },
 
   // Get real-time monitoring data
-  getRealTimeMonitoring: async (organizationId: string): Promise<any> => {
-    try {
-      let token = '';
-      if (typeof window !== 'undefined') {
-        const { authStorage } = await import('../auth-storage');
-        token = authStorage.getAccessToken() || '';
-      }
-
-      const response = await fetch(`https://backend.liaplus.com/backend/api/real-time-monitoring?organization_id=${organizationId}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to fetch real-time monitoring:', error);
-      throw error;
-    }
+  getRealTimeMonitoring: async (_organizationId: string): Promise<any> => {
+    return null;
   }
 };
