@@ -57,7 +57,14 @@ export const AssistantSchema = z.object({
   gemini_end_sensitivity: z.enum(['END_SENSITIVITY_LOW', 'END_SENSITIVITY_MEDIUM', 'END_SENSITIVITY_HIGH']).optional().default('END_SENSITIVITY_HIGH'),
   gemini_silence_duration_ms: z.number().min(200).max(3000).optional().default(800),
   gemini_prefix_padding_ms: z.number().min(0).max(500).optional().default(100),
-  
+
+  // 8) Prompt Config
+  language: z.string().optional().default('hindi'),
+  script_rule: z.string().optional().default(''),
+  opening_instruction: z.string().optional().default(''),
+  closing_instruction: z.string().optional().default(''),
+  timeout_message: z.string().optional().default(''),
+
   // 7) Call Messages
   initial_message: z.string().optional().default('Hello, I am a digital assistant. How can I help you today?'),
   call_end_text: z.string().optional().default('Thank you for calling. Have a great day!'),
@@ -106,6 +113,17 @@ export interface AssistantDetails {
   function_filler_message: string[];
   has_knowledge_base: boolean;
   documents_ids: number[] | null;
+  // Prompt Config
+  language: string;
+  script_rule: string;
+  opening_instruction: string;
+  closing_instruction: string;
+  timeout_message: string;
+  // Gemini VAD settings
+  gemini_start_sensitivity: string;
+  gemini_end_sensitivity: string;
+  gemini_silence_duration_ms: number;
+  gemini_prefix_padding_ms: number;
   id: number;
   assistant_id: string;
   training_status: string;
@@ -189,6 +207,17 @@ export interface UpdateAssistantRequest {
   status: string;
   has_knowledge_base: boolean;
   documents_ids: number[] | null;
+  // Prompt Config
+  language?: string;
+  script_rule?: string;
+  opening_instruction?: string;
+  closing_instruction?: string;
+  timeout_message?: string;
+  // Gemini VAD
+  gemini_start_sensitivity?: string;
+  gemini_end_sensitivity?: string;
+  gemini_silence_duration_ms?: number;
+  gemini_prefix_padding_ms?: number;
 }
 
 // Helper types for form sections

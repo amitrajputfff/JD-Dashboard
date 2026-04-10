@@ -9,7 +9,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { usePreviousPage } from '@/hooks/use-previous-page';
 import type { CallLog } from '@/types/call';
 import type { Agent } from '@/types/agent';
-import { mockCallLogs } from '@/lib/mock-data/calls';
 import { AdvancedAudioPlayer } from '@/components/ui/advanced-audio-player';
 import { PieChart, Pie, Label, Tooltip as RechartsTooltip } from 'recharts';
 import {
@@ -139,14 +138,8 @@ export default function CallDetailsPage() {
         const data = await callsApi.getCallLogById(callId);
         setCallData(data);
       } catch (err) {
-        // Fall back to mock data if available
-        const mockMatch = mockCallLogs.find((c) => String(c.id) === callId || c.call_sid === callId);
-        if (mockMatch) {
-          setCallData(mockMatch);
-        } else {
-          const errorMessage = err instanceof Error ? err.message : 'Failed to fetch call details';
-          setError(errorMessage);
-        }
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch call details';
+        setError(errorMessage);
       } finally {
         setIsLoading(false);
       }

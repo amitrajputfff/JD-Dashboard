@@ -13,10 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { X, Tag, User, Wand2, Phone, MessageSquare, Info } from 'lucide-react';
+import { X, Tag, User, Info } from 'lucide-react';
 
 const CATEGORIES = [
   { value: 'Customer Service', emoji: '🎧', recommended: true },
@@ -27,17 +26,6 @@ const CATEGORIES = [
   { value: 'Other', emoji: '🤖', recommended: false },
 ];
 
-const GREETING_TEMPLATES = [
-  "Hello! Thank you for calling. How can I assist you today?",
-  "Hi there! I'm your virtual assistant. What can I help you with?",
-  "Welcome! I'm here to help. What brings you in today?",
-];
-
-const CALL_END_TEMPLATES = [
-  "Thank you for calling! Have a wonderful day.",
-  "It was a pleasure assisting you. Goodbye!",
-  "Thanks for reaching out. Don't hesitate to call again!",
-];
 
 function FieldLabel({ children, tooltip }: { children: React.ReactNode; tooltip?: string }) {
   return (
@@ -228,118 +216,6 @@ export function BasicInfoSection({ control, watch, setValue }: FormSectionProps)
         </CardContent>
       </Card>
 
-      {/* ── Card 2: Conversation Flow ── */}
-      <Card className="shadow-none">
-        <CardHeader className="pb-4 pt-5 px-6">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
-              <Phone className="w-3.5 h-3.5 text-primary" />
-            </div>
-            Conversation Flow
-          </CardTitle>
-          <CardDescription className="text-xs">
-            What your agent says at the start and end of each call
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-6 pb-6 space-y-6">
-
-          {/* Greeting Message */}
-          <FormField
-            control={control}
-            name="initial_message"
-            render={({ field }) => (
-              <FormItem>
-                <div className="flex items-center justify-between mb-1.5">
-                  <FormLabel className="mb-0">
-                    <FieldLabel tooltip="The first thing your agent says when a call connects">
-                      Greeting Message <span className="text-red-500">*</span>
-                    </FieldLabel>
-                  </FormLabel>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-muted-foreground">Templates:</span>
-                    {GREETING_TEMPLATES.map((t, i) => (
-                      <Tooltip key={i}>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            onClick={() => field.onChange(t)}
-                            className="text-[10px] bg-muted hover:bg-primary hover:text-primary-foreground px-1.5 py-0.5 rounded transition-colors"
-                          >
-                            {i + 1}
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-[200px] text-xs">
-                          {t}
-                        </TooltipContent>
-                      </Tooltip>
-                    ))}
-                  </div>
-                </div>
-                <FormControl>
-                  <div className="relative">
-                    <MessageSquare className="absolute left-3 top-3 w-3.5 h-3.5 text-muted-foreground" />
-                    <Textarea
-                      placeholder="Hello! Thank you for calling. How can I assist you today?"
-                      className="min-h-[80px] resize-none text-sm pl-9"
-                      value={field.value || ''}
-                      onChange={field.onChange}
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Call End Message */}
-          <FormField
-            control={control}
-            name="call_end_text"
-            render={({ field }) => (
-              <FormItem>
-                <div className="flex items-center justify-between mb-1.5">
-                  <FormLabel className="mb-0">
-                    <FieldLabel tooltip="What your agent says before disconnecting the call">
-                      Call End Message <span className="text-red-500">*</span>
-                    </FieldLabel>
-                  </FormLabel>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-muted-foreground">Templates:</span>
-                    {CALL_END_TEMPLATES.map((t, i) => (
-                      <Tooltip key={i}>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            onClick={() => field.onChange(t)}
-                            className="text-[10px] bg-muted hover:bg-primary hover:text-primary-foreground px-1.5 py-0.5 rounded transition-colors"
-                          >
-                            {i + 1}
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-[200px] text-xs">
-                          {t}
-                        </TooltipContent>
-                      </Tooltip>
-                    ))}
-                  </div>
-                </div>
-                <FormControl>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 w-3.5 h-3.5 text-muted-foreground" />
-                    <Textarea
-                      placeholder="Thank you for calling! Have a wonderful day."
-                      className="min-h-[70px] resize-none text-sm pl-9"
-                      value={field.value || ''}
-                      onChange={field.onChange}
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </CardContent>
-      </Card>
     </div>
   );
 }

@@ -37,6 +37,17 @@ export interface AssistantDetails {
   description: string;
   filler_message: string[];
   function_filler_message: string[];
+  // Prompt Config
+  language: string;
+  script_rule: string;
+  opening_instruction: string;
+  closing_instruction: string;
+  timeout_message: string;
+  // Gemini VAD
+  gemini_start_sensitivity: string;
+  gemini_end_sensitivity: string;
+  gemini_silence_duration_ms: number;
+  gemini_prefix_padding_ms: number;
   id: number;
   assistant_id: string;
   training_status: string;
@@ -101,6 +112,17 @@ export interface UpdateAssistantRequest {
   stt_model_id: number;
   language_id: number;
   status: string;
+  // Prompt Config
+  language?: string;
+  script_rule?: string;
+  opening_instruction?: string;
+  closing_instruction?: string;
+  timeout_message?: string;
+  // Gemini VAD
+  gemini_start_sensitivity?: string;
+  gemini_end_sensitivity?: string;
+  gemini_silence_duration_ms?: number;
+  gemini_prefix_padding_ms?: number;
 }
 
 export interface Provider {
@@ -960,6 +982,15 @@ export function mapApiAssistantToAgent(apiAssistant: AssistantDetails): any {
     transfer_number: apiAssistant.transfer_number,
     filler_message: apiAssistant.filler_message,
     function_filler_message: apiAssistant.function_filler_message,
+    language: apiAssistant.language,
+    script_rule: apiAssistant.script_rule,
+    opening_instruction: apiAssistant.opening_instruction,
+    closing_instruction: apiAssistant.closing_instruction,
+    timeout_message: apiAssistant.timeout_message,
+    gemini_start_sensitivity: apiAssistant.gemini_start_sensitivity,
+    gemini_end_sensitivity: apiAssistant.gemini_end_sensitivity,
+    gemini_silence_duration_ms: apiAssistant.gemini_silence_duration_ms,
+    gemini_prefix_padding_ms: apiAssistant.gemini_prefix_padding_ms,
     assistant_id: apiAssistant.assistant_id,
     training_status: apiAssistant.training_status,
     logo_file_url: apiAssistant.logo_file_url,

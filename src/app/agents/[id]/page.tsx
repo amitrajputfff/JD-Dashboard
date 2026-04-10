@@ -511,12 +511,17 @@ export default function AgentDetailsPage() {
       form.setValue('stt_model_id', assistantData.stt_model_id || undefined);
       form.setValue('language_id', assistantData.language_id || 11); // Default language if null
       
-      // Message fields - use demo messages if empty
-      form.setValue('initial_message', assistantData.initial_message || DEMO_MESSAGES.initial);
-      form.setValue('call_end_text', assistantData.call_end_text || DEMO_MESSAGES.callEnd);
+      // Message fields
       form.setValue('filler_message', Array.isArray(assistantData.filler_message) ? assistantData.filler_message : (assistantData.filler_message ? [assistantData.filler_message] : DEMO_MESSAGES.filler));
       form.setValue('function_filler_message', Array.isArray(assistantData.function_filler_message) ? assistantData.function_filler_message : (assistantData.function_filler_message ? [assistantData.function_filler_message] : []));
-      
+
+      // Prompt config fields
+      form.setValue('language', (assistantData as any).language || 'hindi');
+      form.setValue('script_rule', (assistantData as any).script_rule || '');
+      form.setValue('opening_instruction', (assistantData as any).opening_instruction || '');
+      form.setValue('closing_instruction', (assistantData as any).closing_instruction || '');
+      form.setValue('timeout_message', (assistantData as any).timeout_message || '');
+
       // Advanced settings
       form.setValue('call_recording', assistantData.call_recording);
       form.setValue('voice_activity_detection', assistantData.voice_activity_detection);
@@ -528,7 +533,13 @@ export default function AgentDetailsPage() {
       form.setValue('ideal_time_seconds', assistantData.ideal_time_seconds || 30);
       form.setValue('is_transferable', assistantData.is_transferable || false);
       form.setValue('transfer_number', assistantData.transfer_number || '');
-      
+
+      // Gemini VAD settings
+      form.setValue('gemini_start_sensitivity', (assistantData as any).gemini_start_sensitivity || 'START_SENSITIVITY_LOW');
+      form.setValue('gemini_end_sensitivity', (assistantData as any).gemini_end_sensitivity || 'END_SENSITIVITY_HIGH');
+      form.setValue('gemini_silence_duration_ms', (assistantData as any).gemini_silence_duration_ms || 800);
+      form.setValue('gemini_prefix_padding_ms', (assistantData as any).gemini_prefix_padding_ms || 100);
+
       // Function calling settings
       form.setValue('function_calling', assistantData.function_calling || false);
       
@@ -752,9 +763,7 @@ export default function AgentDetailsPage() {
         is_transferable: cleanFormData.is_transferable ?? false,
         // Always send transfer_number as null if not set
         transfer_number: cleanFormData.transfer_number || null,
-        // Call Messages - ensure demo messages are used if empty
-        initial_message: cleanFormData.initial_message || DEMO_MESSAGES.initial,
-        call_end_text: cleanFormData.call_end_text || DEMO_MESSAGES.callEnd,
+        // Call Messages
         filler_message: (cleanFormData.filler_message && cleanFormData.filler_message.length > 0) ? cleanFormData.filler_message : DEMO_MESSAGES.filler,
         function_filler_message: (cleanFormData.function_filler_message && cleanFormData.function_filler_message.length > 0) ? cleanFormData.function_filler_message : [],
         // Function calling settings
@@ -763,7 +772,7 @@ export default function AgentDetailsPage() {
         // Knowledge base settings
         has_knowledge_base: cleanFormData.has_knowledge_base ?? false,
         documents_ids: cleanFormData.documents_ids || null,
-        // LLM settings - required when activating or updating active assistant
+        // LLM settings
         llm_model_id: formData.llm_model_id,
         prompt: formData.prompt,
         temperature: formData.temperature,
@@ -771,13 +780,24 @@ export default function AgentDetailsPage() {
         // Memory settings
         memory_enabled: cleanFormData.memory_enabled ?? false,
         max_memory_retrieval: cleanFormData.max_memory_retrieval || 5,
-        // TTS settings - required when activating or updating active assistant
+        // TTS settings
         voice_id: formData.voice_id,
         tts_model_id: formData.tts_model_id,
-        // STT settings - required when activating or updating active assistant
+        // STT settings
         stt_model_id: formData.stt_model_id,
         language_id: formData.language_id,
-        // Set status to Active when activating a draft, otherwise preserve current status
+        // Prompt config
+        language: cleanFormData.language || 'hindi',
+        script_rule: cleanFormData.script_rule || '',
+        opening_instruction: cleanFormData.opening_instruction || '',
+        closing_instruction: cleanFormData.closing_instruction || '',
+        timeout_message: cleanFormData.timeout_message || '',
+        // Gemini VAD
+        gemini_start_sensitivity: cleanFormData.gemini_start_sensitivity || 'START_SENSITIVITY_LOW',
+        gemini_end_sensitivity: cleanFormData.gemini_end_sensitivity || 'END_SENSITIVITY_HIGH',
+        gemini_silence_duration_ms: cleanFormData.gemini_silence_duration_ms || 800,
+        gemini_prefix_padding_ms: cleanFormData.gemini_prefix_padding_ms || 100,
+        // Status
         status: isDraft ? 'Active' : agent.status,
       };
       
@@ -883,8 +903,6 @@ export default function AgentDetailsPage() {
         // Always send transfer_number as null if not set
         transfer_number: cleanFormData.transfer_number || null,
         // Call Messages
-        initial_message: cleanFormData.initial_message || null,
-        call_end_text: cleanFormData.call_end_text || null,
         filler_message: (cleanFormData.filler_message && cleanFormData.filler_message.length > 0) ? cleanFormData.filler_message : [],
         // Function calling settings
         function_calling: cleanFormData.function_calling ?? false,
@@ -892,18 +910,29 @@ export default function AgentDetailsPage() {
         // Knowledge base settings
         has_knowledge_base: cleanFormData.has_knowledge_base ?? false,
         documents_ids: cleanFormData.documents_ids || null,
-        // Include LLM settings if available
+        // LLM settings
         ...(formData.llm_model_id && { llm_model_id: formData.llm_model_id }),
         ...(formData.prompt && { prompt: formData.prompt }),
         ...(formData.temperature && { temperature: formData.temperature }),
         ...(formData.max_token && { max_token: formData.max_token }),
-        // Include TTS settings if available
+        // TTS settings
         ...(formData.voice_id && { voice_id: formData.voice_id }),
         ...(formData.tts_model_id && { tts_model_id: formData.tts_model_id }),
-        // Include STT settings if available
+        // STT settings
         ...(formData.stt_model_id && { stt_model_id: formData.stt_model_id }),
         ...(formData.language_id && { language_id: formData.language_id }),
-        // Set status to draft
+        // Prompt config
+        language: cleanFormData.language || 'hindi',
+        script_rule: cleanFormData.script_rule || '',
+        opening_instruction: cleanFormData.opening_instruction || '',
+        closing_instruction: cleanFormData.closing_instruction || '',
+        timeout_message: cleanFormData.timeout_message || '',
+        // Gemini VAD
+        gemini_start_sensitivity: cleanFormData.gemini_start_sensitivity || 'START_SENSITIVITY_LOW',
+        gemini_end_sensitivity: cleanFormData.gemini_end_sensitivity || 'END_SENSITIVITY_HIGH',
+        gemini_silence_duration_ms: cleanFormData.gemini_silence_duration_ms || 800,
+        gemini_prefix_padding_ms: cleanFormData.gemini_prefix_padding_ms || 100,
+        // Status
         status: 'Draft'
       };
       
@@ -1513,6 +1542,7 @@ export default function AgentDetailsPage() {
                           mode="edit"
                           showHeader={false}
                           errors={errors}
+                          assistantId={agentId}
                         />
                       </CardContent>
                     </Card>
