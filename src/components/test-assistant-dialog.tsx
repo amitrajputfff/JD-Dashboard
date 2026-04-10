@@ -223,6 +223,8 @@ export function TestAssistantDialog({
   const [showVarDialog, setShowVarDialog] = useState(false)
   const [queryGroups, setQueryGroups] = useState<FunctionQueryGroup[]>([])
   const [queryValues, setQueryValues] = useState<Record<string, string>>({})
+  const [sampleProduct, setSampleProduct] = useState("")
+  const [sampleBuyerName, setSampleBuyerName] = useState("")
 
   const transcriptEndRef = useRef<HTMLDivElement>(null)
   const { resolvedTheme } = useTheme()
@@ -418,6 +420,9 @@ export function TestAssistantDialog({
       const paramKey = sep !== -1 ? flatKey.slice(sep + 2) : flatKey
       if (val.trim()) params[paramKey] = val.trim()
     })
+    // Sample lead fields — only used when no real lead_id / mobile is provided
+    if (sampleProduct.trim()) params["srchterm"] = sampleProduct.trim()
+    if (sampleBuyerName.trim()) params["buyer_name"] = sampleBuyerName.trim()
     handleStartCall(Object.keys(params).length > 0 ? params : undefined)
   }
 
@@ -785,9 +790,43 @@ export function TestAssistantDialog({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-5 py-2 pr-1">
+
+          {/* ── Sample Lead ─────────────────────────────────────────── */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="h-px flex-1 bg-border" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide shrink-0">
+                Sample Lead
+              </p>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Used when no <code className="bg-muted px-1 rounded">lead_id</code> or <code className="bg-muted px-1 rounded">mobile</code> is provided. Leave empty for the default sample.
+            </p>
+            <div className="flex items-center gap-3">
+              <Label className="w-28 shrink-0 text-sm font-mono text-muted-foreground">product</Label>
+              <Input
+                placeholder="e.g. washing machine, cctv, refrigerator…"
+                value={sampleProduct}
+                onChange={(e) => setSampleProduct(e.target.value)}
+                className="text-sm h-9"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <Label className="w-28 shrink-0 text-sm font-mono text-muted-foreground">buyer_name</Label>
+              <Input
+                placeholder="e.g. Rahul"
+                value={sampleBuyerName}
+                onChange={(e) => setSampleBuyerName(e.target.value)}
+                className="text-sm h-9"
+              />
+            </div>
+          </div>
+
+          {/* ── API Function Parameters ──────────────────────────────── */}
           {queryGroups.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-              <p className="text-sm text-muted-foreground">No query parameters configured.</p>
+            <div className="flex flex-col items-center justify-center gap-2 py-4 text-center">
+              <p className="text-sm text-muted-foreground">No API query parameters configured.</p>
               <p className="text-xs text-muted-foreground/70">
                 Add an API function with query params in the agent&apos;s <strong>Advanced</strong> tab to pass values like <code className="bg-muted px-1 rounded">lead_id</code> or <code className="bg-muted px-1 rounded">mobile</code> here.
               </p>
