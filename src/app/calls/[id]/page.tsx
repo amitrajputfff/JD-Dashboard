@@ -621,24 +621,32 @@ ${transcriptContent}`;
             </Card>
 
             {/* Q&A Responses */}
-            {hasData(callData?.meta_data?.qna) && callData!.meta_data.qna!.length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <MessageSquare className="h-5 w-5" />
-                    Q&amp;A Responses
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {callData!.meta_data.qna!.map((item, index) => (
-                    <div key={index} className="p-3 border border-border/50 rounded-lg space-y-1">
-                      <p className="text-xs text-muted-foreground">Q{item.Qid}: {item.Quest}</p>
-                      <p className="text-sm font-medium">{item.Answ || <span className="text-muted-foreground italic">No answer</span>}</p>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
+            {(() => {
+              const specQues = [
+                callData?.meta_data?.spec_ques_1,
+                callData?.meta_data?.spec_ques_2,
+                callData?.meta_data?.spec_ques_3,
+                callData?.meta_data?.spec_ques_4,
+              ].filter(Boolean) as Array<{ Qid: string; Quest: string; Answ: string }>;
+              return specQues.length > 0 ? (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <MessageSquare className="h-5 w-5" />
+                      Q&amp;A Responses
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {specQues.map((item, index) => (
+                      <div key={index} className="p-3 border border-border/50 rounded-lg space-y-1">
+                        <p className="text-xs text-muted-foreground">Q{item.Qid}: {item.Quest}</p>
+                        <p className="text-sm font-medium">{item.Answ || <span className="text-muted-foreground italic">No answer</span>}</p>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              ) : null;
+            })()}
 
           </div>
         );

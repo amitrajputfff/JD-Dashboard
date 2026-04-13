@@ -166,7 +166,11 @@ export interface CallLog {
     lead_id?: string;
     lead_call_id?: string;
     product?: string;
-    qna?: Array<{ Qid: string; Quest: string; Answ: string }>;
+    qna?: Array<{ id: string; quest: string; answ: string }>;
+    spec_ques_1?: { Qid: string; Quest: string; Answ: string };
+    spec_ques_2?: { Qid: string; Quest: string; Answ: string };
+    spec_ques_3?: { Qid: string; Quest: string; Answ: string };
+    spec_ques_4?: { Qid: string; Quest: string; Answ: string };
     is_business?: string;
     rescheduled_to?: string;
     product_change?: Record<string, any>;
