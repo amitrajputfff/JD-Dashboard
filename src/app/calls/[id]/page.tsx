@@ -4,8 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { callsApi } from '@/lib/api/calls';
-import { agentsApi } from '@/lib/api/agents';
-import { useAuth } from '@/hooks/use-auth';
 import { usePreviousPage } from '@/hooks/use-previous-page';
 import type { CallLog } from '@/types/call';
 import { AppSidebar } from "@/components/app-sidebar"
@@ -30,6 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
   ArrowLeft,
+  Clock,
   Phone,
   User,
   Download,
@@ -45,20 +44,21 @@ import {
   Users,
   Activity,
   FileText,
+  Calendar,
+  MessageSquare,
+  Tag,
 } from 'lucide-react';
 
 export default function CallDetailsPage() {
   const params = useParams();
   const callId = params.id as string;
-  const { user } = useAuth();
   const { goBack } = usePreviousPage();
-  
+
   const [activeTab, setActiveTab] = useState('transcript');
   const [transcriptSearch, setTranscriptSearch] = useState('');
-  
+
   // API state
   const [callData, setCallData] = useState<CallLog | null>(null);
-  const [agentName, setAgentName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,14 +69,14 @@ export default function CallDetailsPage() {
   useEffect(() => {
     const fetchCallDetails = async () => {
       if (!callId) return;
-      
+
       // Prevent duplicate calls for the same callId
       if (hasFetchedRef.current === callId) return;
-      
+
       hasFetchedRef.current = callId;
       setIsLoading(true);
       setError(null);
-      
+
       try {
         const data = await callsApi.getCallLogById(callId);
         setCallData(data);
@@ -90,34 +90,6 @@ export default function CallDetailsPage() {
 
     fetchCallDetails();
   }, [callId]);
-
-  // Fetch assistant name separately when we have callData and user
-  useEffect(() => {
-    const fetchAssistantName = async () => {
-      if (!callData?.assistant_id || !user?.organization_id) return;
-      
-          try {
-            const assistantsResponse = await agentsApi.getAgents({
-              organization_id: user.organization_id,
-          limit: 1000,
-              skip: 0,
-            });
-            
-            // Find the matching assistant by assistant_id field
-            const matchingAssistant = assistantsResponse.assistants?.find(
-          (assistant: any) => assistant.assistant_id === callData.assistant_id
-            );
-            
-            if (matchingAssistant?.name) {
-              setAgentName(matchingAssistant.name);
-            }
-          } catch (agentErr) {
-            console.error('Failed to fetch assistants:', agentErr);
-      }
-    };
-
-    fetchAssistantName();
-  }, [callData?.assistant_id, user?.organization_id]);
 
   const formatDuration = (seconds: number | null) => {
     if (!seconds) return '0:00';
@@ -274,11 +246,11 @@ export default function CallDetailsPage() {
         .join('\n');
 
       // Add call metadata
-      const fullContent = `Call Transcript - ${callData.call_id}
+      const fullContent = `Call Transcript - ${callData.call_sid}
 Date: ${formatTimestamp(callData.start_time)}
 Duration: ${formatDuration(callData.duration_seconds || 0)}
 Status: ${callData.status}
-Assistant: ${agentName || 'Unknown'}
+Outcome: ${callData.outcome || 'Unknown'}
 
 --- TRANSCRIPT ---
 
@@ -289,7 +261,7 @@ ${transcriptContent}`;
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `call-transcript-${callData.call_id}-${new Date(callData.start_time).toISOString().split('T')[0]}.txt`;
+      link.download = `call-transcript-${callData.call_sid}-${new Date(callData.start_time).toISOString().split('T')[0]}.txt`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -310,8 +282,8 @@ ${transcriptContent}`;
       // Try to use Web Share API if available
       if (navigator.share) {
         await navigator.share({
-          title: `Call Details - ${callData?.call_id}`,
-          text: `View call details for call ${callData?.call_id}`,
+          title: `Call Details - ${callData?.call_sid}`,
+          text: `View call details for call ${callData?.call_sid}`,
           url: shareUrl,
         });
         toast.success('Call shared successfully');
@@ -443,104 +415,231 @@ ${transcriptContent}`;
 
       case 'disposition':
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
+
+            {/* Disposition / Outcome */}
             <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <CheckCircle className="h-5 w-5" />
                   Disposition Saved
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CardContent className="space-y-3">
+                {hasData(callData?.outcome) ? (
+                  <>
                     <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">From</p>
-                        <p className="text-sm font-medium">
-                          {(() => {
-                            const isWebCall = callData?.meta_data?.source === 'web' ||
-                                            callData?.meta_data?.source === 'widget' ||
-                                            callData?.from_number?.toLowerCase().includes('web') ||
-                                            callData?.from_number?.toLowerCase().includes('widget') ||
-                                            callData?.call_type === 'webcall' ||
-                                            (!callData?.from_number && !callData?.to_number);
-                            return isWebCall ? 'Web' : displayValue(callData?.from_number);
-                          })()}
-                        </p>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground mb-1">Call Outcome</p>
+                        <p className="text-sm font-semibold">{callData!.outcome}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">To</p>
-                        <p className="text-sm font-medium">
-                          {(() => {
-                            const isWebCall = callData?.meta_data?.source === 'web' ||
-                                            callData?.meta_data?.source === 'widget' ||
-                                            callData?.to_number?.toLowerCase().includes('web') ||
-                                            callData?.to_number?.toLowerCase().includes('widget') ||
-                                            callData?.call_type === 'webcall' ||
-                                            (!callData?.from_number && !callData?.to_number);
-                            return isWebCall ? 'Web' : displayValue(callData?.to_number);
-                          })()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                      <Activity className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Status</p>
-                        <p className="text-sm font-medium capitalize">{displayValue(callData?.status)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                      <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Outcome</p>
-                        <p className="text-sm font-medium capitalize">{displayValue(callData?.outcome)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                      <PhoneIncoming className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Call Type</p>
-                        <p className="text-sm font-medium capitalize">{displayValue(callData?.call_type)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Transferred</p>
-                        <p className="text-sm font-medium">{callData?.is_transfered ? 'Yes' : 'No'}</p>
-                      </div>
-                    </div>
-                    {hasData(callData?.transfer_number) && (
-                      <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-xs text-muted-foreground">Transfer Number</p>
-                          <p className="text-sm font-medium">{callData!.transfer_number}</p>
-                        </div>
+                    {hasData(callData?.meta_data?.call_outcome_desc) && (
+                      <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
+                        <p className="text-xs text-muted-foreground mb-1">Outcome Description</p>
+                        <p className="text-sm leading-relaxed">{callData!.meta_data.call_outcome_desc}</p>
                       </div>
                     )}
+                  </>
+                ) : (
+                  <div className="text-center py-4">
+                    <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200">No Disposition Saved</Badge>
                   </div>
-                  {hasData(callData?.tags) && callData!.tags!.length > 0 && (
-                    <div className="pt-2 border-t">
-                      <p className="text-xs text-muted-foreground mb-2">Tags</p>
-                      <div className="flex flex-wrap gap-2">
-                        {callData!.tags!.map((tag, index) => (
-                          <Badge key={index} variant="outline" className="bg-muted text-muted-foreground border-border text-xs">
-                            {tag.charAt(0).toUpperCase() + tag.slice(1).replace('-', ' ')}
-                          </Badge>
-                        ))}
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Call Summary */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <MessageSquare className="h-5 w-5" />
+                  Call Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {hasData(callData?.summary) ? (
+                  <p className="text-sm leading-relaxed">{callData!.summary}</p>
+                ) : (
+                  <div className="text-center py-4">
+                    <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200">No Summary Available</Badge>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Callback Payload Details */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Activity className="h-5 w-5" />
+                  Callback Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {hasData(callData?.meta_data?.lead_id) && (
+                    <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                      <Tag className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Lead ID</p>
+                        <p className="text-sm font-medium break-all">{callData!.meta_data.lead_id}</p>
+                      </div>
+                    </div>
+                  )}
+                  {hasData(callData?.meta_data?.lead_call_id) && (
+                    <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                      <Tag className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Lead Call ID</p>
+                        <p className="text-sm font-medium break-all">{callData!.meta_data.lead_call_id}</p>
+                      </div>
+                    </div>
+                  )}
+                  {hasData(callData?.meta_data?.buyer_name) && (
+                    <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                      <User className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Buyer Name</p>
+                        <p className="text-sm font-medium">{callData!.meta_data.buyer_name}</p>
+                      </div>
+                    </div>
+                  )}
+                  {hasData(callData?.meta_data?.buyer_city) && (
+                    <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                      <Globe className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Buyer City</p>
+                        <p className="text-sm font-medium">{callData!.meta_data.buyer_city}</p>
+                      </div>
+                    </div>
+                  )}
+                  {hasData(callData?.meta_data?.is_business) && (
+                    <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                      <Users className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Is Business</p>
+                        <p className="text-sm font-medium">{callData!.meta_data.is_business}</p>
+                      </div>
+                    </div>
+                  )}
+                  {hasData(callData?.meta_data?.product) && (
+                    <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                      <Tag className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Product</p>
+                        <p className="text-sm font-medium">{callData!.meta_data.product}</p>
+                      </div>
+                    </div>
+                  )}
+                  {hasData(callData?.meta_data?.rescheduled_to) && (
+                    <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                      <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Rescheduled To</p>
+                        <p className="text-sm font-medium">{callData!.meta_data.rescheduled_to}</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                    <Phone className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">From</p>
+                      <p className="text-sm font-medium">
+                        {(() => {
+                          const isWebCall = callData?.meta_data?.source === 'web' ||
+                                          callData?.meta_data?.source === 'widget' ||
+                                          callData?.call_type === 'webcall' ||
+                                          (!callData?.from_number && !callData?.to_number);
+                          return isWebCall ? 'Web' : displayValue(callData?.from_number);
+                        })()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                    <Phone className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">To</p>
+                      <p className="text-sm font-medium">
+                        {(() => {
+                          const isWebCall = callData?.meta_data?.source === 'web' ||
+                                          callData?.meta_data?.source === 'widget' ||
+                                          callData?.call_type === 'webcall' ||
+                                          (!callData?.from_number && !callData?.to_number);
+                          return isWebCall ? 'Web' : displayValue(callData?.to_number);
+                        })()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                    <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Duration</p>
+                      <p className="text-sm font-medium">{formatDuration(callData?.duration_seconds || 0)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                    <Activity className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Status</p>
+                      <p className="text-sm font-medium capitalize">{displayValue(callData?.status)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                    <PhoneIncoming className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Call Type</p>
+                      <p className="text-sm font-medium capitalize">{displayValue(callData?.call_type)}</p>
+                    </div>
+                  </div>
+                  {callData?.is_transfered && (
+                    <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                      <Phone className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Transferred To</p>
+                        <p className="text-sm font-medium">{callData.transfer_number || 'Yes'}</p>
                       </div>
                     </div>
                   )}
                 </div>
+
+                {/* Product Change */}
+                {hasData(callData?.meta_data?.product_change) && Object.keys(callData!.meta_data.product_change!).length > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2 font-medium">Product Change</p>
+                    <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
+                      {Object.entries(callData!.meta_data.product_change!).map(([key, val]) => (
+                        <div key={key} className="flex justify-between text-sm py-0.5">
+                          <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</span>
+                          <span className="font-medium">{String(val)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
+
+            {/* Q&A Responses */}
+            {hasData(callData?.meta_data?.qna) && callData!.meta_data.qna!.length > 0 && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <MessageSquare className="h-5 w-5" />
+                    Q&amp;A Responses
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {callData!.meta_data.qna!.map((item, index) => (
+                    <div key={index} className="p-3 border border-border/50 rounded-lg space-y-1">
+                      <p className="text-xs text-muted-foreground">Q{item.Qid}: {item.Quest}</p>
+                      <p className="text-sm font-medium">{item.Answ || <span className="text-muted-foreground italic">No answer</span>}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
           </div>
         );
 

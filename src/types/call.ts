@@ -162,13 +162,26 @@ export interface CallLog {
   transfer_number: string | null;
   status: string;
   summary: string | null;
-  meta_data: Record<string, any>;
+  meta_data: {
+    lead_id?: string;
+    lead_call_id?: string;
+    product?: string;
+    qna?: Array<{ Qid: string; Quest: string; Answ: string }>;
+    is_business?: string;
+    rescheduled_to?: string;
+    product_change?: Record<string, any>;
+    buyer_name?: string;
+    buyer_city?: string;
+    call_outcome_desc?: string;
+    source?: string;
+    [key: string]: any;
+  };
   metrics: CallMetrics | null;
   quality: CallQualityMetrics | null;
   sentiment: string;
   outcome: string | null;
   tags: string[];
-  call_type: 'inbound' | 'outbound';
+  call_type: 'inbound' | 'outbound' | 'webcall';
   insights: CallInsight[];
   key_events: CallKeyEvent[];
   customer_satisfaction: number | null;
