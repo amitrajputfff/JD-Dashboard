@@ -147,7 +147,7 @@ export interface BatchCallRequest {
 
 // Call Log from API
 export interface CallLog {
-  id: number;
+  id: string | number;
   call_sid: string;
   stream_id: string;
   from_number: string;
