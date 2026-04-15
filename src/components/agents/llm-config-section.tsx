@@ -496,7 +496,7 @@ Always end with a question mark.`;
 
       {/* ── Diff dialog ───────────────────────────────────────────────── */}
       <Dialog open={diffDialogOpen} onOpenChange={setDiffDialogOpen}>
-        <DialogContent className="!max-w-[80vw]">
+        <DialogContent className="!max-w-[70vw] max-h-[50vh]">
           <DialogHeader>
             <DialogTitle className="text-sm font-medium flex items-center gap-2">
               <GitCompare className="w-4 h-4" />
